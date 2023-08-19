@@ -3,6 +3,8 @@ import {View, Text, FlatList} from 'react-native';
 import {EMPTY, Subject} from 'rxjs';
 import {catchError, takeUntil} from 'rxjs/operators';
 import ApiService from '../services/ApiService';
+import io from 'socket.io-client';
+import {generateUniqueId} from '../utils/generateUniqueId';
 
 // TODO настроить ts, у меня не получилось =(
 // import {RouteProp} from '@react-navigation/native';
@@ -20,11 +22,29 @@ import ApiService from '../services/ApiService';
 // };
 
 const RoomPage: React.FC<any> = ({route}) => {
-  const [roomData, setRoomData] = useState<{roomNumber: string; messages: any[]}>({
+  const [roomData, setRoomData] = useState<{
+    roomNumber: string;
+    messages: any[];
+  }>({
     roomNumber: '',
     messages: [],
   });
   const [destroy$] = useState(new Subject());
+  const userId = generateUniqueId();
+  const socket = io('http://localhost:3000', {query: {userId}});
+
+  useEffect(() => {
+    const {roomNumber} = route.params;
+    socket.emit('joinRoom', {roomNumber, userId});
+
+    socket.on('userJoined', ({userId: guestId}) => {
+      console.log(`${guestId} joined the room.`);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [route.params, socket, userId]);
 
   useEffect(() => {
     const {roomNumber} = route.params;

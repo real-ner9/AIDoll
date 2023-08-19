@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, TextInput, Button} from 'react-native';
-import {EMPTY, Subject} from 'rxjs';
+import { EMPTY, Subject, switchMap } from 'rxjs';
 import {catchError, takeUntil} from 'rxjs/operators';
 import ApiService from '../services/ApiService';
 import {NavigationProp} from '@react-navigation/native';
@@ -38,6 +38,29 @@ const LandingPage: React.FC<LandingPageProps> = ({navigation}) => {
       );
   };
 
+  const handleCreateRoom = () => {
+    ApiService.createRoom()
+      .pipe(
+        switchMap(roomData => {
+          return ApiService.connectToRoom(roomData.roomNumber).pipe(
+            catchError(error => {
+              console.error('Error connecting to room:', error);
+              return EMPTY;
+            }),
+          );
+        }),
+        takeUntil(destroy$),
+      )
+      .subscribe(
+        roomData => {
+          navigation.navigate('RoomPage', {roomNumber: roomData.roomNumber});
+        },
+        error => {
+          console.error('Error creating and connecting to room:', error);
+        },
+      );
+  };
+
   useEffect(() => {
     return () => {
       destroy$.next(true);
@@ -54,6 +77,7 @@ const LandingPage: React.FC<LandingPageProps> = ({navigation}) => {
         placeholder="Room Number"
       />
       <Button title="Connect" onPress={connectToRoom} />
+      <Button title="Create and Connect" onPress={handleCreateRoom} />
     </View>
   );
 };

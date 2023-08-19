@@ -29,6 +29,19 @@ const ApiService = {
       }),
     );
   },
+
+  createRoom(): Observable<RoomData> {
+    return from(
+      axios
+        .post<RoomData>(`${BASE_URL}/rooms`)
+        .then(response => response.data),
+    ).pipe(
+      catchError(error => {
+        console.error('Error creating room:', error);
+        return throwError(error);
+      }),
+    );
+  },
 };
 
 export default ApiService;

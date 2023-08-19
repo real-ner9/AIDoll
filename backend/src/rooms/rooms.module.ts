@@ -4,6 +4,7 @@ import { RoomsController } from './rooms.controller';
 import { RoomsService } from './rooms.service';
 import { Room, RoomSchema } from './schemas/room.schema';
 import { Message, MessageSchema } from './schemas/message.schema';
+import { RoomsGateway } from './rooms.gateway';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { Message, MessageSchema } from './schemas/message.schema';
     ]),
   ],
   controllers: [RoomsController],
-  providers: [RoomsService],
+  providers: [RoomsService, RoomsGateway],
 })
 export class RoomsModule {}
