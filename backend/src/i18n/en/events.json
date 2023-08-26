@@ -1,0 +1,14 @@
+{
+  "start": "Start the bot",
+  "restart": "Restart the bot",
+  "findPartner": "Find a partner",
+  "stopSearch": "Stop search",
+  "welcome": "Welcome to our bot!",
+  "botRestarted": "Bot has been restarted.",
+  "searchPartner": "Searching for a partner...",
+  "stopPartnerSearch": "Search has been stopped.",
+  "connectedWithPartner": "You are now connected with a partner!",
+  "chatEnded": "Chat ended.",
+  "changePartner": "Change Partner",
+  "endChat": "End Chat"
+}
