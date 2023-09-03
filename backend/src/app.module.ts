@@ -19,10 +19,10 @@ import { HeaderResolver, I18nModule } from 'nestjs-i18n';
       },
       resolvers: [new HeaderResolver(['x-custom-lang'])], // здесь мы указываем резолвер
     }),
-    MongooseModule.forRoot(
-      'mongodb+srv://Cluster84278:WlhFQmdzQ2do@cluster84278.zywqkmq.mongodb.net/?appName=mongosh+1.10.5',
-    ),
-    RoomsModule,
+    // MongooseModule.forRoot(
+    //   'mongodb+srv://Cluster84278:WlhFQmdzQ2do@cluster84278.zywqkmq.mongodb.net/?appName=mongosh+1.10.5',
+    // ),
+    // RoomsModule
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../', 'file-store'),
       serveRoot: '/rooms/file-store/',
