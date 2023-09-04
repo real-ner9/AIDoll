@@ -5,6 +5,15 @@ import { I18nService } from 'nestjs-i18n';
 import { MessageService } from './message.service';
 import { RoomsService } from './room.service';
 
+async function safeExecute(fn: Function, ctx, ...args: any[]) {
+  try {
+    await fn(ctx, ...args);
+  } catch (error) {
+    console.error('An error occurred:', error);
+    ctx.reply('An error occurred, please try again.');
+  }
+}
+
 @Injectable()
 export class BotActionsService {
   lang = 'ru';
@@ -18,30 +27,34 @@ export class BotActionsService {
 
   init(): void {
     this.bot = new Telegraf(process.env.BOT_TOKEN);
-    this.bot.start(this.onBotStart.bind(this));
-    this.bot.command('restart', this.onBotRestart.bind(this));
+
+    this.bot.start((ctx) => safeExecute(this.onBotStart.bind(this), ctx));
+    this.bot.command('restart', (ctx) =>
+      safeExecute(this.onBotRestart.bind(this), ctx),
+    );
     this.bot.hears(
       this.i18n.t('events.findPartner', { lang: this.lang }),
-      this.onFindPartner.bind(this),
+      (ctx) => safeExecute(this.onFindPartner.bind(this), ctx),
     );
     this.bot.hears(
       this.i18n.t('events.stopSearch', { lang: this.lang }),
-      this.onStopSearch.bind(this),
+      (ctx) => safeExecute(this.onStopSearch.bind(this), ctx),
     );
     this.bot.hears(
       this.i18n.t('events.changePartner', { lang: this.lang }),
-      this.onChangePartner.bind(this),
+      (ctx) => safeExecute(this.onChangePartner.bind(this), ctx),
     );
-
-    this.bot.hears(
-      this.i18n.t('events.endChat', { lang: this.lang }),
-      this.onEndChat.bind(this),
+    this.bot.hears(this.i18n.t('events.endChat', { lang: this.lang }), (ctx) =>
+      safeExecute(this.onEndChat.bind(this), ctx),
     );
-
     this.bot.on('message', (ctx) => {
-      this.messageService.forwardMessage(this.bot, ctx);
+      try {
+        this.messageService.forwardMessage(this.bot, ctx);
+      } catch (error) {
+        console.error('An error occurred while forwarding a message:', error);
+        ctx.reply('An error occurred, please try again.');
+      }
     });
-
     this.bot.launch();
   }
 
