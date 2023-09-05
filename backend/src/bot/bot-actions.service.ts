@@ -288,6 +288,7 @@ export class BotActionsService {
     } else {
       room = this.roomsService.createRoom(userId);
       this.userService.setActiveRoom(userId, room.id);
+      this.notificationOtherUsers(userId);
     }
   }
 
@@ -301,6 +302,7 @@ export class BotActionsService {
         this.userService.setCurrentPartner(partnerId, null);
         this.userService.addPastPartner(userId, partnerId);
         this.userService.addPastPartner(partnerId, userId);
+        this.userService.setActiveRoom(partnerId, null);
         this.roomsService.deactivateRoom(room);
         this.bot.telegram
           .sendMessage(
@@ -320,6 +322,7 @@ export class BotActionsService {
     }
 
     this.userService.setCurrentPartner(userId, null);
+    this.userService.setActiveRoom(userId, null);
     if (showKeyboard) {
       ctx
         .reply(
@@ -340,5 +343,50 @@ export class BotActionsService {
   async onChangePartner(ctx): Promise<void> {
     await this.onEndChat(ctx, false);
     await this.onFindPartner(ctx);
+  }
+
+  async notificationOtherUsers(userId: string) {
+    // Защита от флуда
+    const TEN_MINUTES = 10 * 60 * 1000; // 10 минут в миллисекундах
+    const lastSearchTimestamp = this.userService.getLastSearchTimestamp(userId);
+    const timeSinceLastSearch = Date.now() - lastSearchTimestamp;
+    if (lastSearchTimestamp && timeSinceLastSearch <= TEN_MINUTES) {
+      return;
+    }
+
+    this.userService.setLastSearchTimestamp(userId);
+    // Получаем всех пользователей, которые не в комнате и не в чате
+    const usersWithoutRoom = Object.keys(this.userService.users).filter(
+      (partnerId) =>
+        !this.userService.getActiveRoom(partnerId) &&
+        !this.userService.getCurrentPartner(partnerId) &&
+        // Добавляем проверку, что userId не в pastPartners
+        !this.userService.getPastPartners(partnerId).includes(userId),
+    );
+
+    const THIRTY_MINUTES = 30 * 60 * 1000; // 30 минут в миллисекундах
+    usersWithoutRoom.forEach((userId) => {
+      const lastNotificationTimestamp =
+        this.userService.getLastNotificationTimestamp(userId);
+      const timeSinceLastNotification = Date.now() - lastNotificationTimestamp;
+      if (
+        lastNotificationTimestamp &&
+        timeSinceLastNotification <= THIRTY_MINUTES
+      ) {
+        return;
+      }
+
+      this.userService.setLastNotificationTimestamp(userId);
+
+      this.bot.telegram
+        .sendMessage(
+          userId,
+          'Кто-то начал поиск. Начинай скорее поиск, чтобы присоединиться! 👇',
+          this.getFindPartnerKeyboard(),
+        )
+        .catch((error) => {
+          console.error('Failed to send message:', error);
+        });
+    });
   }
 }

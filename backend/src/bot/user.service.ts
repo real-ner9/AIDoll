@@ -13,6 +13,8 @@ export class UserService {
       pastPartners: string[];
       currentPartner: string;
       lastCleaned: number;
+      lastSearchTimestamp?: number;
+      lastNotificationTimestamp?: number;
     }
   > = {};
 
@@ -41,9 +43,34 @@ export class UserService {
         pastPartners: [],
         lastCleaned: Date.now(),
         currentPartner: null,
+        lastSearchTimestamp: Date.now(),
       };
     }
     this.users[userId].activeRoom = roomId;
+  }
+
+  getLastSearchTimestamp(userId: string) {
+    return this.users[userId].lastSearchTimestamp;
+  }
+
+  setLastSearchTimestamp(userId: string) {
+    if (!this.users?.[userId]) {
+      return;
+    }
+
+    this.users[userId].lastSearchTimestamp = Date.now();
+  }
+
+  getLastNotificationTimestamp(userId: string) {
+    return this.users[userId].lastNotificationTimestamp;
+  }
+
+  setLastNotificationTimestamp(userId: string) {
+    if (!this.users?.[userId]) {
+      return;
+    }
+
+    this.users[userId].lastNotificationTimestamp = Date.now();
   }
 
   addPastPartner(userId: string, partnerId: string): void {
