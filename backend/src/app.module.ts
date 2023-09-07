@@ -31,7 +31,9 @@ import * as process from 'process';
       password: process.env.PASSWORD,
       database: process.env.DATABASE,
       entities: [__dirname + '/**/*.entity.{js,ts}'],
-      synchronize: true,
+      synchronize: false,
+      migrationsRun: true,
+      migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
     }),
     // MongooseModule.forRoot(
     //   'mongodb+srv://Cluster84278:WlhFQmdzQ2do@cluster84278.zywqkmq.mongodb.net/?appName=mongosh+1.10.5',
