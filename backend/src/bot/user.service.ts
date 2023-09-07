@@ -234,26 +234,26 @@ export class UserService {
 
     const idleUsers = await this.userRepository
       .createQueryBuilder('user')
-      .andWhere('user.activeRoom IS NOT NULL')
+      .where('user.activeRoom IS NOT NULL')
       .andWhere('user.currentPartner IS NOT NULL')
       .andWhere(
         'array_length(user.pastPartners, 1) IS NULL OR array_length(user.pastPartners, 1) = 0',
       )
-      .andWhere('user.lastMessageTimestamp < :fifteenMinutesAgo', {
-        fifteenMinutesAgo,
-      })
       .getMany();
 
     for (const user of idleUsers) {
-      user.activeRoom && this.roomService.deactivateRoom(user.activeRoom);
-      user.activeRoom = null;
-      user.currentPartner = null;
-      user.lastMessageTimestamp = null;
-      try {
-        await this.userRepository.save(user);
-        this.updateCache(user);
-      } catch (e) {
-        console.error('disconnectIdlePartners error:', e.message);
+      // я не понимаю почему bigint nest считает за string, буду позже разбираться
+      if (user.lastMessageTimestamp < fifteenMinutesAgo) {
+        user.activeRoom && this.roomService.deactivateRoom(user.activeRoom);
+        user.activeRoom = null;
+        user.currentPartner = null;
+        user.lastMessageTimestamp = null;
+        try {
+          await this.userRepository.save(user);
+          this.updateCache(user);
+        } catch (e) {
+          console.error('disconnectIdlePartners error:', e.message);
+        }
       }
     }
   }
