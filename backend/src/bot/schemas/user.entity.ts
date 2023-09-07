@@ -32,6 +32,9 @@ export class User {
   @Column({ default: true })
   enableNotification: boolean;
 
+  @Column({ type: 'bigint', nullable: true })
+  lastMessageTimestamp: number;
+
   constructor(userId: string) {
     this.userId = userId;
     this.isBlocked = false;
@@ -42,5 +45,6 @@ export class User {
     this.lastCleaned = Date.now();
     this.lastSearchTimestamp = null;
     this.lastNotificationTimestamp = null;
+    this.lastMessageTimestamp = null;
   }
 }

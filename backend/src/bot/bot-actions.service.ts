@@ -364,7 +364,7 @@ export class BotActionsService {
           await this.userService.addPastPartner(userId, partnerId);
           await this.userService.addPastPartner(partnerId, userId);
           await this.userService.setActiveRoom(partnerId, null);
-          await this.roomsService.deactivateRoom(room);
+          this.roomsService.deactivateRoom(room.id);
           await this.bot.telegram
             .sendMessage(
               partnerId,
@@ -417,7 +417,7 @@ export class BotActionsService {
     const userId = ctx.from.id.toString();
     const room = this.roomsService.findRoomByUserId(userId);
 
-    room && this.roomsService.deactivateRoom(room);
+    room && this.roomsService.deactivateRoom(room.id);
   }
 
   async onChangePartner(ctx): Promise<void> {

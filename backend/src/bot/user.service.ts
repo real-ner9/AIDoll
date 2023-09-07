@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { RoomsService } from './room.service';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -15,11 +16,20 @@ export class UserService {
 
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
+    private readonly roomService: RoomsService,
   ) {
-    setInterval(() => {
+    setInterval(async () => {
       this.invalidateCache();
-      this.removePastPartners();
+      try {
+        await this.removePastPartners();
+        await this.disconnectIdlePartners();
+      } catch (e) {
+        console.error(
+          'removePastPartners or disconnectIdlePartners error: ',
+          e.message,
+        );
+      }
     }, this.deleteDelay);
   }
 
@@ -205,6 +215,38 @@ export class UserService {
     if (user && user.enableNotification !== flag) {
       user.enableNotification = flag;
       await this.userRepository.save(user);
+    }
+  }
+
+  // Данный метод создан для тех случаев,
+  // когда пользаки перешли из бота в лс или просто забили и не общаются, но находятся в комнате
+  // метод вычисляет таких и удаляет все связи друг с другом
+  private async disconnectIdlePartners(): Promise<void> {
+    const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+
+    const idleUsers = await this.userRepository
+      .createQueryBuilder('user')
+      .andWhere('user.activeRoom IS NOT NULL')
+      .andWhere('user.currentPartner IS NOT NULL')
+      .andWhere(
+        'array_length(user.pastPartners, 1) IS NULL OR array_length(user.pastPartners, 1) = 0',
+      )
+      .andWhere('user.lastMessageTimestamp < :fifteenMinutesAgo', {
+        fifteenMinutesAgo,
+      })
+      .getMany();
+
+    for (const user of idleUsers) {
+      user.activeRoom && this.roomService.deactivateRoom(user.activeRoom);
+      user.activeRoom = null;
+      user.currentPartner = null;
+      user.lastMessageTimestamp = null;
+      try {
+        await this.userRepository.save(user);
+        this.updateCache(user);
+      } catch (e) {
+        console.error('disconnectIdlePartners error:', e.message);
+      }
     }
   }
 }
