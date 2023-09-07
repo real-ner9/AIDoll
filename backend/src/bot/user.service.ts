@@ -135,6 +135,14 @@ export class UserService {
     this.updateCache(user);
   }
 
+  async setLastMessageTimestamp(userId: string): Promise<void> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    user.lastMessageTimestamp = Date.now();
+    await this.userRepository.save(user);
+    this.updateCache(user);
+  }
+
   async getActiveRoom(userId: string): Promise<string> {
     const user = await this.getUserFromCacheOrDB(userId);
     return user?.activeRoom || '';

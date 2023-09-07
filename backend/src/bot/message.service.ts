@@ -37,6 +37,13 @@ export class MessageService {
     const messageType = Object.keys(this.MESSAGE_TYPES).find(
       (type) => ctx.message[type],
     );
+
+    try {
+      await this.userService.setLastMessageTimestamp(userId);
+    } catch (e) {
+      console.error('forwardMessage.setLastMessageTimestamp error', e.message);
+    }
+
     if (messageType) {
       const method = this.MESSAGE_TYPES[messageType];
       let content = ctx.message[messageType];
