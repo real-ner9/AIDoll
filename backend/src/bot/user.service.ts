@@ -59,7 +59,9 @@ export class UserService {
   async setActiveRoom(userId: string, roomId: string): Promise<void> {
     let user = await this.getUserFromCacheOrDB(userId);
     if (!user) {
-      user = this.userRepository.create({ userId, pastPartners: [] });
+      user = new UserEntity();
+      user.userId = userId;
+      user.pastPartners = [];
     }
     user.activeRoom = roomId;
     await this.userRepository.save(user);
@@ -97,12 +99,11 @@ export class UserService {
   async addPastPartner(userId: string, partnerId: string): Promise<void> {
     let user = await this.getUserFromCacheOrDB(userId);
     if (!user) {
-      user = this.userRepository.create({
-        userId,
-        pastPartners: [],
-        lastCleaned: Date.now(),
-        currentPartner: null,
-      });
+      user = new UserEntity();
+      user.userId = userId;
+      user.pastPartners = [];
+      user.lastCleaned = Date.now();
+      user.currentPartner = null;
     }
     if (!user.pastPartners) {
       user.pastPartners = [];
@@ -116,15 +117,12 @@ export class UserService {
     let user = await this.getUserFromCacheOrDB(userId);
 
     if (!user) {
-      user = this.userRepository.create({
-        userId,
-        activeRoom: '',
-        pastPartners: [],
-        lastCleaned: Date.now(),
-        currentPartner: null,
-      });
-      await this.userRepository.save(user);
-      this.updateCache(user);
+      user = new UserEntity();
+      user.userId = userId;
+      user.activeRoom = '';
+      user.pastPartners = [];
+      user.lastCleaned = Date.now();
+      user.currentPartner = null;
     }
 
     user.currentPartner = partnerId;
