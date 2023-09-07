@@ -158,70 +158,98 @@ export class BotActionsService {
   }
 
   async onBotStart(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    ctx
-      .reply(
-        this.i18n.t('events.welcome', { lang: this.lang }),
-        this.getFindPartnerKeyboard(),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('events.welcome: ', err, ctx);
-      });
+    try {
+      await this.onEndChat(ctx, false);
+      await ctx
+        .reply(
+          this.i18n.t('events.welcome', { lang: this.lang }),
+          this.getFindPartnerKeyboard(),
+        )
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError('events.welcome: ', err, ctx);
+        });
+    } catch (e) {
+      console.error('onBotStart error', e.message);
+    }
   }
 
   async onBotRestart(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    await ctx
-      .reply(
-        this.i18n.t('events.botRestarted', { lang: this.lang }),
-        this.getFindPartnerKeyboard(),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('events.botRestarted: ', err, ctx);
-      });
+    try {
+      await this.onEndChat(ctx, false);
+      await ctx
+        .reply(
+          this.i18n.t('events.botRestarted', { lang: this.lang }),
+          this.getFindPartnerKeyboard(),
+        )
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError('events.botRestarted: ', err, ctx);
+        });
+    } catch (e) {
+      console.error('onBotRestart error', e.message);
+    }
   }
 
   async onHideNotification(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    await ctx
-      .reply(
-        this.i18n.t('events.searchPartner', { lang: this.lang }),
-        this.getFindPartnerKeyboard(),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('events.searchPartner: ', err, ctx);
-      });
-    await this.toggleNotification(ctx, false);
+    try {
+      await this.onEndChat(ctx, false);
+      await ctx
+        .reply(
+          this.i18n.t('events.searchPartner', { lang: this.lang }),
+          this.getFindPartnerKeyboard(),
+        )
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError('events.searchPartner: ', err, ctx);
+        });
+      await this.toggleNotification(ctx, false);
+    } catch (e) {
+      console.error('onHideNotification error', e.message);
+    }
   }
 
   async onShowNotification(ctx): Promise<void> {
-    await this.toggleNotification(ctx, true);
+    try {
+      await this.toggleNotification(ctx, true);
+    } catch (e) {
+      console.error('onShowNotification error', e.message);
+    }
   }
 
   async onFindPartner(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    await ctx
-      .reply(
-        this.i18n.t('events.searchPartner', { lang: this.lang }),
-        this.getStopSearchKeyboard(),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('events.searchPartner: ', err, ctx);
-      });
-    await this.findPartner(ctx);
+    try {
+      await this.onEndChat(ctx, false);
+      await ctx
+        .reply(
+          this.i18n.t('events.searchPartner', { lang: this.lang }),
+          this.getStopSearchKeyboard(),
+        )
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError('events.searchPartner: ', err, ctx);
+        });
+      await this.findPartner(ctx);
+    } catch (e) {
+      console.error('onFindPartner error', e.message);
+    }
   }
 
   async onStopSearch(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    await ctx
-      .reply(
-        this.i18n.t('events.stopPartnerSearch', { lang: this.lang }),
-        this.getFindPartnerKeyboard(),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('events.stopPartnerSearch: ', err, ctx);
-      });
-    await this.stopSearch(ctx);
+    try {
+      await this.onEndChat(ctx, false);
+      await ctx
+        .reply(
+          this.i18n.t('events.stopPartnerSearch', { lang: this.lang }),
+          this.getFindPartnerKeyboard(),
+        )
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError(
+            'events.stopPartnerSearch: ',
+            err,
+            ctx,
+          );
+        });
+      await this.stopSearch(ctx);
+    } catch (e) {
+      console.error('onStopSearch error', e.message);
+    }
   }
 
   getFindPartnerKeyboard(hideNotificationButton = false): any {
@@ -260,59 +288,67 @@ export class BotActionsService {
     );
 
     if (room) {
-      room = this.roomsService.addUserToRoom(userId, room);
-      await this.userService.setActiveRoom(userId, room.id);
+      try {
+        room = this.roomsService.addUserToRoom(userId, room);
+        await this.userService.setActiveRoom(userId, room.id);
 
-      // Клавиатура с двумя кнопками
-      const partnerChatKeyboard = Markup.inlineKeyboard([
-        Markup.button.callback(
-          this.i18n.t('events.changePartner', { lang: this.lang }),
-          'change_partner',
-        ),
-        Markup.button.callback(
-          this.i18n.t('events.endChat', { lang: this.lang }),
-          'end_chat',
-        ),
-      ]);
+        // Клавиатура с двумя кнопками
+        const partnerChatKeyboard = Markup.inlineKeyboard([
+          Markup.button.callback(
+            this.i18n.t('events.changePartner', { lang: this.lang }),
+            'change_partner',
+          ),
+          Markup.button.callback(
+            this.i18n.t('events.endChat', { lang: this.lang }),
+            'end_chat',
+          ),
+        ]);
 
-      await ctx
-        .reply(
-          this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
-          partnerChatKeyboard,
-        )
-        .catch(async (err, ctx) => {
-          await this.handleBotEventError(
-            'events.connectedWithPartner: ',
-            err,
-            ctx,
-          );
-        });
+        await ctx
+          .reply(
+            this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
+            partnerChatKeyboard,
+          )
+          .catch(async (err, ctx) => {
+            await this.handleBotEventError(
+              'events.connectedWithPartner: ',
+              err,
+              ctx,
+            );
+          });
 
-      const partnerId = room.users.find((u) => u !== userId);
-      await this.userService.setActiveRoom(partnerId, room.id);
-      await this.userService.setCurrentPartner(userId, partnerId);
-      await this.userService.setCurrentPartner(partnerId, userId);
+        const partnerId = room.users.find((u) => u !== userId);
+        await this.userService.setActiveRoom(partnerId, room.id);
+        await this.userService.setCurrentPartner(userId, partnerId);
+        await this.userService.setCurrentPartner(partnerId, userId);
 
-      await this.bot.telegram
-        .sendMessage(
-          partnerId,
-          this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
-          partnerChatKeyboard,
-        )
-        .then()
-        .catch((error) => {
-          console.error('An error:', error.message);
-          ctx
-            .reply(
-              `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-              this.getFindPartnerKeyboard(),
-            )
-            .catch((err) => console.log(err.message));
-        });
+        await this.bot.telegram
+          .sendMessage(
+            partnerId,
+            this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
+            partnerChatKeyboard,
+          )
+          .then()
+          .catch((error) => {
+            console.error('An error:', error.message);
+            ctx
+              .reply(
+                `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
+                this.getFindPartnerKeyboard(),
+              )
+              .catch((err) => console.log(err.message));
+          });
+      } catch (e) {
+        console.error('findPartner if room error', e.message);
+      }
     } else {
-      room = this.roomsService.createRoom(userId);
-      await this.userService.setActiveRoom(userId, room.id);
-      await this.notificationOtherUsers(userId);
+      try {
+        room = this.roomsService.createRoom(userId);
+        await this.userService.setActiveRoom(userId, room.id);
+        await this.notificationOtherUsers(userId);
+      } catch (e) {
+        console.error('findPartner if not room error', e.message);
+      }
     }
   }
 
@@ -323,30 +359,41 @@ export class BotActionsService {
     if (room && room.active) {
       const partnerId = room.users.find((u) => u !== userId);
       if (partnerId) {
-        await this.userService.setCurrentPartner(partnerId, null);
-        await this.userService.addPastPartner(userId, partnerId);
-        await this.userService.addPastPartner(partnerId, userId);
-        await this.userService.setActiveRoom(partnerId, null);
-        await this.roomsService.deactivateRoom(room);
-        await this.bot.telegram
-          .sendMessage(
-            partnerId,
-            this.i18n.t('events.chatEnded', { lang: this.lang }),
-            this.getFindPartnerKeyboard(),
-          )
-          .then()
-          .catch((error) => {
-            console.error('An error:', error.message);
-            ctx.reply(
-              `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
+        try {
+          await this.userService.setCurrentPartner(partnerId, null);
+          await this.userService.addPastPartner(userId, partnerId);
+          await this.userService.addPastPartner(partnerId, userId);
+          await this.userService.setActiveRoom(partnerId, null);
+          await this.roomsService.deactivateRoom(room);
+          await this.bot.telegram
+            .sendMessage(
+              partnerId,
+              this.i18n.t('events.chatEnded', { lang: this.lang }),
               this.getFindPartnerKeyboard(),
-            );
-          });
+            )
+            .then()
+            .catch((error) => {
+              console.error('An error:', error.message);
+              ctx.reply(
+                `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
+                this.getFindPartnerKeyboard(),
+              );
+            });
+        } catch (e) {
+          console.error('onEndChat if partnerId error', e.message);
+        }
       }
     }
 
-    await this.userService.setCurrentPartner(userId, null);
-    await this.userService.setActiveRoom(userId, null);
+    try {
+      await this.userService.setCurrentPartner(userId, null);
+      await this.userService.setActiveRoom(userId, null);
+    } catch (e) {
+      console.error(
+        'onEndChat setCurrentPartner setActiveRoom error',
+        e.message,
+      );
+    }
     if (showKeyboard) {
       ctx
         .reply(

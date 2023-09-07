@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { UserEntity } from './schemas/user.entity';
+import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
@@ -11,11 +11,11 @@ export class UserService {
   deleteDelay = 30 * 60 * 1000;
 
   // Initialize user cache
-  userCache: Record<string, UserEntity> = {};
+  userCache: Record<string, User> = {};
 
   constructor(
-    @InjectRepository(UserEntity)
-    private userRepository: Repository<UserEntity>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {
     setInterval(() => {
       this.invalidateCache();
@@ -43,9 +43,7 @@ export class UserService {
     this.userCache = {};
   }
 
-  private async getUserFromCacheOrDB(
-    userId: string,
-  ): Promise<UserEntity | null> {
+  private async getUserFromCacheOrDB(userId: string): Promise<User | null> {
     if (this.userCache[userId]) {
       return this.userCache[userId];
     }
@@ -59,8 +57,7 @@ export class UserService {
   async setActiveRoom(userId: string, roomId: string): Promise<void> {
     let user = await this.getUserFromCacheOrDB(userId);
     if (!user) {
-      user = new UserEntity();
-      user.userId = userId;
+      user = new User(userId);
       user.pastPartners = [];
     }
     user.activeRoom = roomId;
@@ -99,8 +96,7 @@ export class UserService {
   async addPastPartner(userId: string, partnerId: string): Promise<void> {
     let user = await this.getUserFromCacheOrDB(userId);
     if (!user) {
-      user = new UserEntity();
-      user.userId = userId;
+      user = new User(userId);
       user.pastPartners = [];
       user.lastCleaned = Date.now();
       user.currentPartner = null;
@@ -117,8 +113,7 @@ export class UserService {
     let user = await this.getUserFromCacheOrDB(userId);
 
     if (!user) {
-      user = new UserEntity();
-      user.userId = userId;
+      user = new User(userId);
       user.activeRoom = '';
       user.pastPartners = [];
       user.lastCleaned = Date.now();
@@ -170,7 +165,7 @@ export class UserService {
     return count;
   }
 
-  private updateCache(user: UserEntity): void {
+  private updateCache(user: User): void {
     this.userCache[user.userId] = user;
   }
 

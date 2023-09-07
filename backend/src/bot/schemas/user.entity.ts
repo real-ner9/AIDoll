@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
-export class UserEntity {
+export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -31,4 +31,16 @@ export class UserEntity {
 
   @Column({ default: true })
   enableNotification: boolean;
+
+  constructor(userId: string) {
+    this.userId = userId;
+    this.isBlocked = false;
+    this.enableNotification = true;
+    this.activeRoom = '';
+    this.pastPartners = [];
+    this.currentPartner = null;
+    this.lastCleaned = Date.now();
+    this.lastSearchTimestamp = null;
+    this.lastNotificationTimestamp = null;
+  }
 }
