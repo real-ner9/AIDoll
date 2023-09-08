@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoomsService } from './room.service';
@@ -162,29 +162,27 @@ export class UserService {
     return user?.currentPartner || null;
   }
 
-  async countUsers(flag: UserFlag): Promise<number> {
-    let count = 0;
-    const users = await this.userRepository.find();
+  async countUsers(): Promise<Record<UserFlag, number>> {
+    const allCount = await this.userRepository.count();
 
-    for (const user of users) {
-      switch (flag) {
-        case 'all':
-          count++;
-          break;
-        case 'activeRoom':
-          if (user.activeRoom && !user.currentPartner) {
-            count++;
-          }
-          break;
-        case 'currentPartner':
-          if (user.currentPartner) {
-            count++;
-          }
-          break;
-      }
-    }
+    const activeRoomCount = await this.userRepository.count({
+      where: {
+        activeRoom: Not(IsNull()),
+        currentPartner: IsNull(),
+      },
+    });
 
-    return count;
+    const currentPartnerCount = await this.userRepository.count({
+      where: {
+        currentPartner: Not(IsNull()),
+      },
+    });
+
+    return {
+      all: allCount,
+      activeRoom: activeRoomCount,
+      currentPartner: currentPartnerCount,
+    };
   }
 
   private updateCache(user: User): void {
@@ -252,9 +250,10 @@ export class UserService {
         .andWhere(
           '(array_length(pastPartners, 1) IS NULL OR array_length(pastPartners, 1) = 0)',
         )
-        .andWhere('lastMessageTimestamp < :fifteenMinutesAgo', {
-          fifteenMinutesAgo,
-        })
+        .andWhere(
+          '(lastMessageTimestamp IS NULL OR lastMessageTimestamp < :fifteenMinutesAgo)',
+          { fifteenMinutesAgo },
+        )
         .execute();
     } catch (e) {
       console.error('disconnectIdlePartners error:', e.message);
