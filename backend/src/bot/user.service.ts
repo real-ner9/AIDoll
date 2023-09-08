@@ -37,14 +37,18 @@ export class UserService {
     const now = Date.now();
     const oneDay = this.deleteDelay;
 
-    const allUsers = await this.userRepository.find();
-
-    for (const user of allUsers) {
-      if (now - user.lastCleaned >= oneDay) {
-        user.pastPartners = [];
-        user.lastCleaned = now;
-        await this.userRepository.save(user);
-      }
+    try {
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          pastPartners: [],
+          lastCleaned: now,
+        })
+        .where('(:now - lastCleaned) >= :oneDay', { now, oneDay })
+        .execute();
+    } catch (e) {
+      console.error('removePastPartners error:', e.message);
     }
   }
 
@@ -188,23 +192,25 @@ export class UserService {
   }
 
   async usersWithoutRoom(userId: string): Promise<string[]> {
-    // Получаем всех пользователей из базы данных
-    const allUsersFromDb = await this.userRepository.find();
-
-    // Фильтруем пользователей на основе заданных условий
-    const availablePartners = allUsersFromDb
-      .filter((user) => {
-        return (
-          user.enableNotification &&
-          !user.isBlocked &&
-          !user.activeRoom &&
-          !user.currentPartner &&
-          !(user.pastPartners || []).includes(userId)
-        );
+    const THIRTY_MINUTES = 10 * 1000;
+    const thirtyMinutesAgo = Date.now() - THIRTY_MINUTES;
+    const availablePartners = await this.userRepository
+      .createQueryBuilder('user')
+      .select('user.userId')
+      .where('user.enableNotification = TRUE')
+      .andWhere('user.isBlocked = FALSE')
+      .andWhere('user.activeRoom IS NULL')
+      .andWhere('user.currentPartner IS NULL')
+      .andWhere(
+        '(user.lastNotificationTimestamp IS NULL OR user.lastNotificationTimestamp <= :thirtyMinutesAgo)',
+        { thirtyMinutesAgo },
+      )
+      .andWhere('user.userId NOT IN (SELECT unnest(user.pastPartners))', {
+        userId,
       })
-      .map((user) => user.userId);
+      .getRawMany();
 
-    return availablePartners;
+    return availablePartners.map((user) => user.user_userId);
   }
 
   async blockUser(userId: string) {
@@ -232,29 +238,26 @@ export class UserService {
   private async disconnectIdlePartners(): Promise<void> {
     const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
 
-    const idleUsers = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.activeRoom IS NOT NULL')
-      .andWhere('user.currentPartner IS NOT NULL')
-      .andWhere(
-        'array_length(user.pastPartners, 1) IS NULL OR array_length(user.pastPartners, 1) = 0',
-      )
-      .getMany();
-
-    for (const user of idleUsers) {
-      // я не понимаю почему bigint nest считает за string, буду позже разбираться
-      if (user.lastMessageTimestamp < fifteenMinutesAgo) {
-        user.activeRoom && this.roomService.deactivateRoom(user.activeRoom);
-        user.activeRoom = null;
-        user.currentPartner = null;
-        user.lastMessageTimestamp = null;
-        try {
-          await this.userRepository.save(user);
-          this.updateCache(user);
-        } catch (e) {
-          console.error('disconnectIdlePartners error:', e.message);
-        }
-      }
+    try {
+      await this.userRepository
+        .createQueryBuilder()
+        .update(User)
+        .set({
+          activeRoom: null,
+          currentPartner: null,
+          lastMessageTimestamp: null,
+        })
+        .where('activeRoom IS NOT NULL')
+        .andWhere('currentPartner IS NOT NULL')
+        .andWhere(
+          '(array_length(pastPartners, 1) IS NULL OR array_length(pastPartners, 1) = 0)',
+        )
+        .andWhere('lastMessageTimestamp < :fifteenMinutesAgo', {
+          fifteenMinutesAgo,
+        })
+        .execute();
+    } catch (e) {
+      console.error('disconnectIdlePartners error:', e.message);
     }
   }
 }

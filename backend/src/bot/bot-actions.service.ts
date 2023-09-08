@@ -439,18 +439,7 @@ export class BotActionsService {
     // Получаем всех пользователей, которые не в комнате и не в чате
     const usersWithoutRoom = await this.userService.usersWithoutRoom(userId);
 
-    const THIRTY_MINUTES = 60 * 60 * 1000;
     for (const userId of usersWithoutRoom) {
-      const lastNotificationTimestamp =
-        await this.userService.getLastNotificationTimestamp(userId);
-      const timeSinceLastNotification = Date.now() - lastNotificationTimestamp;
-      if (
-        lastNotificationTimestamp &&
-        timeSinceLastNotification <= THIRTY_MINUTES
-      ) {
-        continue;
-      }
-
       await this.userService.setLastNotificationTimestamp(userId);
 
       await this.bot.telegram
