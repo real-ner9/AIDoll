@@ -427,7 +427,7 @@ export class BotActionsService {
 
   async notificationOtherUsers(userId: string) {
     // Защита от флуда
-    const TEN_MINUTES = 30 * 60 * 1000;
+    const TEN_MINUTES = 10 * 60 * 1000;
     const lastSearchTimestamp =
       await this.userService.getLastSearchTimestamp(userId);
     const timeSinceLastSearch = Date.now() - lastSearchTimestamp;

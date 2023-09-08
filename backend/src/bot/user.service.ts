@@ -192,8 +192,8 @@ export class UserService {
   }
 
   async usersWithoutRoom(userId: string): Promise<string[]> {
-    const THIRTY_MINUTES = 30 * 60 * 1000;
-    const thirtyMinutesAgo = Date.now() - THIRTY_MINUTES;
+    const DELAY = 60 * 60 * 1000;
+    const preparedDelay = Date.now() - DELAY;
     const availablePartners = await this.userRepository
       .createQueryBuilder('user')
       .select('user.userId')
@@ -202,8 +202,8 @@ export class UserService {
       .andWhere('user.activeRoom IS NULL')
       .andWhere('user.currentPartner IS NULL')
       .andWhere(
-        '(user.lastNotificationTimestamp IS NULL OR user.lastNotificationTimestamp <= :thirtyMinutesAgo)',
-        { thirtyMinutesAgo },
+        '(user.lastNotificationTimestamp IS NULL OR user.lastNotificationTimestamp <= :preparedDelay)',
+        { preparedDelay },
       )
       .andWhere('user.userId NOT IN (SELECT unnest(user.pastPartners))', {
         userId,
