@@ -20,6 +20,10 @@ export class MessageService {
     Markup.button.callback('Найти партнера', 'find_partner'),
   ]);
 
+  private isFileSizeValid(fileSize: number, limit: number): boolean {
+    return fileSize <= limit;
+  }
+
   async forwardMessage(bot: Telegraf, ctx): Promise<void> {
     const userId = ctx.from.id.toString();
     const currentPartnerId = await this.userService.getCurrentPartner(userId);
@@ -51,6 +55,19 @@ export class MessageService {
         content = content[0];
       }
 
+      // Проверяем размер файла
+      if (
+        content.file_size &&
+        !this.isFileSizeValid(content.file_size, 250 * 1024 * 1024)
+      ) {
+        await ctx
+          .reply(
+            '😱Превышен лимит размера файла!\n Максимальный размер: 250 МБ.',
+          )
+          .catch((err) => console.error('isFileSizeValid error', err.message));
+        return;
+      }
+
       return bot.telegram[method](
         currentPartnerId,
         content.file_id || content,
@@ -63,7 +80,7 @@ export class MessageService {
 
             await ctx
               .reply('Упс, пользователь покинул чат', this.findPartnerKeyboard)
-              .catch((err) => console.log(err));
+              .catch((err) => console.error(err.message));
           }
         }
       });

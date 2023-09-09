@@ -11,7 +11,8 @@ async function safeExecute(fn: Function, ctx, ...args: any[]) {
   try {
     await fn(ctx, ...args);
   } catch (error) {
-    console.error('An error:', error);
+    console.error('SafeExecute error:', error.message);
+
     ctx
       .reply(
         `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
@@ -50,6 +51,14 @@ export class BotActionsService {
   }
 
   init(): void {
+    process.on('unhandledRejection', (reason) => {
+      console.error('Unhandled Promise Rejection:', reason);
+    });
+
+    process.on('uncaughtException', (error) => {
+      console.error('Uncaught Exception:', error);
+    });
+
     this.bot = new Telegraf(process.env.BOT_TOKEN);
 
     this.bot.catch(async (err, ctx) => {
@@ -328,7 +337,6 @@ export class BotActionsService {
             this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
             partnerChatKeyboard,
           )
-          .then()
           .catch((error) => {
             console.error('An error:', error.message);
             ctx
