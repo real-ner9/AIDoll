@@ -154,7 +154,15 @@ export class UserService {
 
   async getPastPartners(userId: string): Promise<string[]> {
     const user = await this.getUserFromCacheOrDB(userId);
-    return user?.pastPartners || [];
+    if (!user) {
+      return [];
+    }
+
+    const pastPartners = user.pastPartners || [];
+
+    const dislikes = user.dislikes || [];
+
+    return Array.from(new Set([...pastPartners, ...dislikes]));
   }
 
   async getCurrentPartner(userId: string): Promise<string> {
@@ -199,6 +207,7 @@ export class UserService {
       .andWhere('user.isBlocked = FALSE')
       .andWhere('user.activeRoom IS NULL')
       .andWhere('user.currentPartner IS NULL')
+      .andWhere(':userId = ANY(user.likes)', { userId })
       .andWhere(
         '(user.lastNotificationTimestamp IS NULL OR user.lastNotificationTimestamp <= :preparedDelay)',
         { preparedDelay },
@@ -258,5 +267,49 @@ export class UserService {
     } catch (e) {
       console.error('disconnectIdlePartners error:', e.message);
     }
+  }
+
+  async addLike(userId: string, partnerId: string): Promise<void> {
+    const user = await this.getUserFromCacheOrDB(userId);
+    if (user) {
+      if (!user.likes) user.likes = [];
+      if (!user.dislikes) user.dislikes = [];
+
+      // Удаляем partnerId из dislikes, если он там есть
+      user.dislikes = user.dislikes.filter((id) => id !== partnerId);
+
+      // Добавляем partnerId в likes, если его там нет
+      if (!user.likes.includes(partnerId)) {
+        user.likes.push(partnerId);
+      }
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async addDislike(userId: string, partnerId: string): Promise<void> {
+    const user = await this.getUserFromCacheOrDB(userId);
+    if (user) {
+      if (!user.likes) user.likes = [];
+      if (!user.dislikes) user.dislikes = [];
+
+      // Удаляем partnerId из likes, если он там есть
+      user.likes = user.likes.filter((id) => id !== partnerId);
+
+      // Добавляем partnerId в dislikes, если его там нет
+      if (!user.dislikes.includes(partnerId)) {
+        user.dislikes.push(partnerId);
+      }
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async getDislikes(userId: string): Promise<string[]> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.dislikes || [];
   }
 }

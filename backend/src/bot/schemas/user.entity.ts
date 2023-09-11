@@ -35,6 +35,12 @@ export class User {
   @Column({ type: 'bigint', nullable: true })
   lastMessageTimestamp: number;
 
+  @Column('text', { array: true, nullable: true })
+  likes: string[];
+
+  @Column('text', { array: true, nullable: true })
+  dislikes: string[];
+
   constructor(userId: string) {
     this.userId = userId;
     this.isBlocked = false;
@@ -46,5 +52,7 @@ export class User {
     this.lastSearchTimestamp = null;
     this.lastNotificationTimestamp = null;
     this.lastMessageTimestamp = null;
+    this.likes = [];
+    this.dislikes = [];
   }
 }

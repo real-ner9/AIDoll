@@ -95,7 +95,7 @@ export class BotActionsService {
         await this.handleBotEventError('change error: ', err, ctx);
       });
     this.bot
-      .hears('/end', (ctx) => safeExecute(this.onEndChat.bind(this), ctx))
+      .hears('/end', (ctx) => safeExecute(this.feedBack.bind(this), ctx))
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end error: ', err, ctx);
       });
@@ -148,7 +148,7 @@ export class BotActionsService {
       });
     this.bot
       .action('end_chat', async (ctx) =>
-        safeExecute(this.onEndChat.bind(this), ctx),
+        safeExecute(this.feedBack.bind(this), ctx),
       )
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end_chat error: ', err, ctx);
@@ -161,9 +161,59 @@ export class BotActionsService {
         await this.handleBotEventError('hide_notification error: ', err, ctx);
       });
 
+    this.bot
+      .action(/positive_feedback\?partnerId=(\d+)/, (ctx) =>
+        safeExecute(this.onPositiveFeedback.bind(this), ctx, {
+          partnerId: ctx.match[1],
+        }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('positive_feedback error: ', err, ctx);
+      });
+
+    this.bot
+      .action(/negative_feedback\?partnerId=(\d+)/, (ctx) =>
+        safeExecute(this.onNegativeFeedback.bind(this), ctx, {
+          partnerId: ctx.match[1],
+        }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('negative_feedback error: ', err, ctx);
+      });
+
     this.bot.launch().catch((err) => {
       console.error('launch error: ', err);
     });
+  }
+
+  async onPositiveFeedback(ctx, { partnerId }: { partnerId: string }) {
+    try {
+      const userId = ctx.from.id.toString();
+      await ctx
+        .deleteMessage()
+        .catch((e) =>
+          console.error('onPositiveFeedback deleteMessage error: ', e.message),
+        );
+      await this.userService.addLike(userId, partnerId);
+      await this.onEndChat(ctx);
+    } catch (e) {
+      console.error('onPositiveFeedback error', e.message);
+    }
+  }
+
+  async onNegativeFeedback(ctx, { partnerId }: { partnerId: string }) {
+    try {
+      const userId = ctx.from.id.toString();
+      await ctx
+        .deleteMessage()
+        .catch((e) =>
+          console.error('onPositiveFeedback deleteMessage error: ', e.message),
+        );
+      await this.userService.addDislike(userId, partnerId);
+      await this.onEndChat(ctx);
+    } catch (e) {
+      console.error('onPositiveFeedback error', e.message);
+    }
   }
 
   async onBotStart(ctx): Promise<void> {
@@ -351,12 +401,42 @@ export class BotActionsService {
       }
     } else {
       try {
-        room = this.roomsService.createRoom(userId);
+        const dislikes = await this.userService.getDislikes(userId);
+        room = this.roomsService.createRoom(userId, dislikes);
         await this.userService.setActiveRoom(userId, room.id);
         await this.notificationOtherUsers(userId);
       } catch (e) {
         console.error('findPartner if not room error', e.message);
       }
+    }
+  }
+
+  async feedBack(ctx) {
+    try {
+      const userId = ctx.from.id.toString();
+      const currentPartner = await this.userService.getCurrentPartner(userId);
+      if (!currentPartner) return;
+      const feedbackKeyboard = Markup.inlineKeyboard([
+        Markup.button.callback(
+          '👍',
+          `positive_feedback?partnerId=${currentPartner}`,
+        ),
+        Markup.button.callback(
+          '👎',
+          `negative_feedback?partnerId=${currentPartner}`,
+        ),
+      ]);
+
+      return await ctx
+        .reply(
+          'Понравилось ли тебе общение с этим партнером?\nЕсли нет, то он больше тебе не попадется',
+          feedbackKeyboard,
+        )
+        .catch((error) => {
+          console.error('feedBack keyboard error:', error.message);
+        });
+    } catch (e) {
+      console.error('feedback error', e.message);
     }
   }
 
@@ -429,8 +509,18 @@ export class BotActionsService {
   }
 
   async onChangePartner(ctx): Promise<void> {
-    await this.onEndChat(ctx, false);
-    await this.onFindPartner(ctx);
+    const userId = ctx.from.id.toString();
+    try {
+      const partnerId = await this.userService.getCurrentPartner(userId);
+
+      if (partnerId) {
+        await this.userService.addDislike(userId, partnerId);
+      }
+      await this.onEndChat(ctx, false);
+      await this.onFindPartner(ctx);
+    } catch (e) {
+      console.error('onChangePartner error: ', e.message);
+    }
   }
 
   async notificationOtherUsers(userId: string) {
@@ -453,7 +543,7 @@ export class BotActionsService {
       await this.bot.telegram
         .sendMessage(
           userId,
-          'Кто-то начал поиск. Начинай скорее поиск, чтобы присоединиться! 👇',
+          'Кто-то из тех, кого ты отметил симпатией, начал поиск 😊 Присоединяйся скорей!',
           this.getFindPartnerKeyboard(true),
         )
         .catch(async (err) => {

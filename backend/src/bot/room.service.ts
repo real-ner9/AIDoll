@@ -13,7 +13,7 @@ export class RoomsService {
     this.rooms = this.rooms.filter((room) => room.active);
   }
 
-  createRoom(userId: string): Room {
+  createRoom(userId: string, dislikes: string[]): Room {
     const activeRoom = this.findRoomByUserId(userId);
     if (activeRoom) {
       return activeRoom;
@@ -22,6 +22,7 @@ export class RoomsService {
       id: Date.now().toString(),
       users: [userId],
       active: true,
+      dislikes,
     };
     this.rooms.push(room);
     return room;
@@ -33,6 +34,7 @@ export class RoomsService {
         room.users.length === 1 &&
         room.active &&
         room.users[0] !== userId &&
+        !room.dislikes.some((dislikeId) => dislikeId === userId) &&
         !pastPartners.some((pastPartner) => pastPartner === room.users[0]),
     );
   }
@@ -69,4 +71,5 @@ interface Room {
   id: string;
   users: string[];
   active: boolean;
+  dislikes: string[];
 }
