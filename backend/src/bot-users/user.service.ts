@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { IsNull, Not, Repository } from 'typeorm';
 import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RoomsService } from './room.service';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -17,7 +16,6 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly roomService: RoomsService,
   ) {
     setInterval(async () => {
       this.invalidateCache();
@@ -231,6 +229,14 @@ export class UserService {
     }
   }
 
+  async unblockUser(userId: string) {
+    const user = await this.getUserFromCacheOrDB(userId);
+    if (user && user.isBlocked) {
+      user.isBlocked = false;
+      await this.userRepository.save(user);
+    }
+  }
+
   async toggleNotification(userId: string, flag: boolean) {
     const user = await this.getUserFromCacheOrDB(userId);
     if (user && user.enableNotification !== flag) {
@@ -316,11 +322,36 @@ export class UserService {
   async getAllActiveUsers(): Promise<User[]> {
     return this.userRepository.find({
       where: {
-        isBlocked: false,
         enableNotification: true,
         activeRoom: null,
         currentPartner: null,
       },
     });
+  }
+
+  async updateBlockStatusForUsers(
+    blockedUsers: string[],
+    unblockedUsers: string[],
+  ): Promise<void> {
+    try {
+      if (blockedUsers.length > 0) {
+        await this.userRepository
+          .createQueryBuilder('user')
+          .update(User)
+          .set({ isBlocked: true })
+          .where('userId IN (:...blockedUsers)', { blockedUsers })
+          .execute();
+      }
+      if (unblockedUsers.length > 0) {
+        await this.userRepository
+          .createQueryBuilder('user')
+          .update(User)
+          .set({ isBlocked: false })
+          .where('userId IN (:...unblockedUsers)', { unblockedUsers })
+          .execute();
+      }
+    } catch (e) {
+      console.error('updateBlockStatusForUsers error:', e.message);
+    }
   }
 }

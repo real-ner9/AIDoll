@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Markup, Telegraf } from 'telegraf';
-import { UserService } from './user.service';
+import { UserService } from '../bot-users/user.service';
 
 @Injectable()
 export class MessageService {

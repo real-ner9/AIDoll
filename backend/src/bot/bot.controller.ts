@@ -1,13 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { RoomsService } from './room.service';
-import { UserService } from './user.service';
+import { UserService } from '../bot-users/user.service';
 
 @Controller('bot')
 export class BotController {
-  constructor(
-    private readonly roomsService: RoomsService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get()
   async getHello(): Promise<string> {

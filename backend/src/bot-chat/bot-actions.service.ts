@@ -4,7 +4,7 @@ import { Markup } from 'telegraf';
 import { I18nService } from 'nestjs-i18n';
 import { MessageService } from './message.service';
 import { RoomsService } from './room.service';
-import { UserService } from './user.service';
+import { UserService } from '../bot-users/user.service';
 import * as process from 'process';
 import * as cron from 'node-cron';
 
@@ -64,12 +64,12 @@ export class BotActionsService {
     this.bot = new Telegraf(process.env.BOT_TOKEN);
 
     cron.schedule(
-      '0 0 21 * * *',
+      '0 0 20 * * *',
       async () => {
-        // 1. Получите всех активных пользователей
         const activeUsers = await this.userService.getAllActiveUsers();
+        const blockedUsers: string[] = [];
+        const unblockedUsers: string[] = [];
 
-        // 2. Отправьте сообщение каждому пользователю с задержкой
         for (let i = 0; i < activeUsers.length; i++) {
           setTimeout(async () => {
             const user = activeUsers[i];
@@ -79,9 +79,24 @@ export class BotActionsService {
                 '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
                 this.getFindPartnerKeyboard(),
               )
-              .catch((e) =>
-                console.error('cron schedule catch test error ', e.message),
+              .then(async () => {
+                if (user.isBlocked) {
+                  unblockedUsers.push(user.userId);
+                }
+              })
+              .catch(async (e) => {
+                if (!user.isBlocked) {
+                  blockedUsers.push(user.userId);
+                }
+                console.error('cron schedule catch test error ', e.message);
+              });
+
+            if (i === activeUsers.length - 1) {
+              await this.userService.updateBlockStatusForUsers(
+                blockedUsers,
+                unblockedUsers,
               );
+            }
           }, i * 500);
         }
       },
@@ -191,9 +206,10 @@ export class BotActionsService {
       });
 
     this.bot
-      .action(/positive_feedback\?partnerId=(\d+)/, (ctx) =>
+      .action(/positive_feedback\?partnerId=(\d+)&event=(\w+)/, (ctx) =>
         safeExecute(this.onPositiveFeedback.bind(this), ctx, {
           partnerId: ctx.match[1],
+          event: ctx.match[2],
         }),
       )
       .catch(async (err, ctx) => {
@@ -201,9 +217,10 @@ export class BotActionsService {
       });
 
     this.bot
-      .action(/negative_feedback\?partnerId=(\d+)/, (ctx) =>
+      .action(/negative_feedback\?partnerId=(\d+)&event=(\w+)/, (ctx) =>
         safeExecute(this.onNegativeFeedback.bind(this), ctx, {
           partnerId: ctx.match[1],
+          event: ctx.match[2],
         }),
       )
       .catch(async (err, ctx) => {
@@ -215,7 +232,10 @@ export class BotActionsService {
     });
   }
 
-  async onPositiveFeedback(ctx, { partnerId }: { partnerId: string }) {
+  async onPositiveFeedback(
+    ctx,
+    { partnerId, event }: { partnerId: string; event: string },
+  ) {
     try {
       const userId = ctx.from.id.toString();
       await ctx
@@ -224,13 +244,19 @@ export class BotActionsService {
           console.error('onPositiveFeedback deleteMessage error: ', e.message),
         );
       await this.userService.addLike(userId, partnerId);
-      await this.onEndChat(ctx);
+      const isChangePartner = event === 'change_partner';
+      await this.onEndChat(ctx, !isChangePartner);
+      isChangePartner && (await this.onFindPartner(ctx));
     } catch (e) {
       console.error('onPositiveFeedback error', e.message);
     }
   }
 
-  async onNegativeFeedback(ctx, { partnerId }: { partnerId: string }) {
+  async onNegativeFeedback(
+    ctx,
+    { partnerId, event }: { partnerId: string; event: string },
+  ) {
+    console.log(event);
     try {
       const userId = ctx.from.id.toString();
       await ctx
@@ -239,7 +265,9 @@ export class BotActionsService {
           console.error('onPositiveFeedback deleteMessage error: ', e.message),
         );
       await this.userService.addDislike(userId, partnerId);
-      await this.onEndChat(ctx);
+      const isChangePartner = event === 'change_partner';
+      await this.onEndChat(ctx, !isChangePartner);
+      isChangePartner && (await this.findPartner(ctx));
     } catch (e) {
       console.error('onPositiveFeedback error', e.message);
     }
@@ -445,14 +473,15 @@ export class BotActionsService {
       const userId = ctx.from.id.toString();
       const currentPartner = await this.userService.getCurrentPartner(userId);
       if (!currentPartner) return;
+      const match = ctx.match && ctx.match[0];
       const feedbackKeyboard = Markup.inlineKeyboard([
         Markup.button.callback(
           '👍',
-          `positive_feedback?partnerId=${currentPartner}`,
+          `positive_feedback?partnerId=${currentPartner}&event=${match}`,
         ),
         Markup.button.callback(
           '👎',
-          `negative_feedback?partnerId=${currentPartner}`,
+          `negative_feedback?partnerId=${currentPartner}&event=${match}`,
         ),
       ]);
 
@@ -474,9 +503,9 @@ export class BotActionsService {
     const room = this.roomsService.findRoomByUserId(userId);
 
     if (room && room.active) {
-      const partnerId = room.users.find((u) => u !== userId);
-      if (partnerId) {
-        try {
+      try {
+        const partnerId = await this.userService.getCurrentPartner(userId);
+        if (partnerId) {
           await this.userService.setCurrentPartner(partnerId, null);
           await this.userService.addPastPartner(userId, partnerId);
           await this.userService.addPastPartner(partnerId, userId);
@@ -496,9 +525,9 @@ export class BotActionsService {
                 this.getFindPartnerKeyboard(),
               );
             });
-        } catch (e) {
-          console.error('onEndChat if partnerId error', e.message);
         }
+      } catch (e) {
+        console.error('onEndChat if partnerId error', e.message);
       }
     }
 
@@ -543,10 +572,11 @@ export class BotActionsService {
       const partnerId = await this.userService.getCurrentPartner(userId);
 
       if (partnerId) {
-        await this.userService.addDislike(userId, partnerId);
+        await this.feedBack(ctx);
+      } else {
+        await this.onEndChat(ctx, false);
+        await this.onFindPartner(ctx);
       }
-      await this.onEndChat(ctx, false);
-      await this.onFindPartner(ctx);
     } catch (e) {
       console.error('onChangePartner error: ', e.message);
     }

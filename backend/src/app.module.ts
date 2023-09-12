@@ -7,6 +7,8 @@ import { BotModule } from './bot/bot.module';
 import { ConfigModule } from '@nestjs/config';
 import { HeaderResolver, I18nModule } from 'nestjs-i18n';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BotUsersModule } from './bot-users/bot-users.module';
+import { BotChatModule } from './bot-chat/bot-chat.module';
 import * as process from 'process';
 
 @Module({
@@ -45,6 +47,8 @@ import * as process from 'process';
       serveRoot: '/rooms/file-store/',
     }),
     BotModule,
+    BotUsersModule,
+    BotChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
