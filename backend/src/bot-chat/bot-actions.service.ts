@@ -19,7 +19,7 @@ async function safeExecute(fn: Function, ctx, ...args: any[]) {
         `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
         this.getFindPartnerKeyboard(),
       )
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   }
 }
 
@@ -161,7 +161,7 @@ export class BotActionsService {
               `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пишите в чат @govirtchat`,
               this.getFindPartnerKeyboard(),
             )
-            .catch((err) => console.log(err));
+            .catch((err) => console.error(err));
           return;
         }
       })
@@ -206,7 +206,7 @@ export class BotActionsService {
       });
 
     this.bot
-      .action(/positive_feedback\?partnerId=(\d+)&event=(\w+)/, (ctx) =>
+      .action(/positive_feedback\?partnerId=(\d+)(?:&event=(\/\w+))?/, (ctx) =>
         safeExecute(this.onPositiveFeedback.bind(this), ctx, {
           partnerId: ctx.match[1],
           event: ctx.match[2],
@@ -217,7 +217,7 @@ export class BotActionsService {
       });
 
     this.bot
-      .action(/negative_feedback\?partnerId=(\d+)&event=(\w+)/, (ctx) =>
+      .action(/positive_feedback\?partnerId=(\d+)(?:&event=(\/\w+))?/, (ctx) =>
         safeExecute(this.onNegativeFeedback.bind(this), ctx, {
           partnerId: ctx.match[1],
           event: ctx.match[2],
@@ -244,7 +244,7 @@ export class BotActionsService {
           console.error('onPositiveFeedback deleteMessage error: ', e.message),
         );
       await this.userService.addLike(userId, partnerId);
-      const isChangePartner = event === 'change_partner';
+      const isChangePartner = event === 'change_partner' || event === '/change';
       await this.onEndChat(ctx, !isChangePartner);
       isChangePartner && (await this.onFindPartner(ctx));
     } catch (e) {
@@ -256,7 +256,6 @@ export class BotActionsService {
     ctx,
     { partnerId, event }: { partnerId: string; event: string },
   ) {
-    console.log(event);
     try {
       const userId = ctx.from.id.toString();
       await ctx
@@ -265,7 +264,7 @@ export class BotActionsService {
           console.error('onPositiveFeedback deleteMessage error: ', e.message),
         );
       await this.userService.addDislike(userId, partnerId);
-      const isChangePartner = event === 'change_partner';
+      const isChangePartner = event === 'change_partner' || event === '/change';
       await this.onEndChat(ctx, !isChangePartner);
       isChangePartner && (await this.findPartner(ctx));
     } catch (e) {
@@ -451,7 +450,7 @@ export class BotActionsService {
                 `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
                 this.getFindPartnerKeyboard(),
               )
-              .catch((err) => console.log(err.message));
+              .catch((err) => console.error(err.message));
           });
       } catch (e) {
         console.error('findPartner if room error', e.message);
@@ -477,11 +476,15 @@ export class BotActionsService {
       const feedbackKeyboard = Markup.inlineKeyboard([
         Markup.button.callback(
           '👍',
-          `positive_feedback?partnerId=${currentPartner}&event=${match}`,
+          `positive_feedback?partnerId=${currentPartner}${
+            match ? `&event=${match}` : ''
+          }`,
         ),
         Markup.button.callback(
           '👎',
-          `negative_feedback?partnerId=${currentPartner}&event=${match}`,
+          `negative_feedback?partnerId=${currentPartner}${
+            match ? `&event=${match}` : ''
+          }`,
         ),
       ]);
 
