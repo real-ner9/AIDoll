@@ -64,7 +64,7 @@ export class BotActionsService {
     this.bot = new Telegraf(process.env.BOT_TOKEN);
 
     cron.schedule(
-      '0 0 20 * * *',
+      '0 0 18 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];
