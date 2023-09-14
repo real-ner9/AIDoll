@@ -206,22 +206,26 @@ export class BotActionsService {
       });
 
     this.bot
-      .action(/positive_feedback\?partnerId=(\d+)(?:&event=(\/\w+))?/, (ctx) =>
-        safeExecute(this.onPositiveFeedback.bind(this), ctx, {
-          partnerId: ctx.match[1],
-          event: ctx.match[2],
-        }),
+      .action(
+        /positive_feedback\?partnerId=(\d+)(?:&event=(\/?\w+(_\w+)*))?/,
+        (ctx) =>
+          safeExecute(this.onPositiveFeedback.bind(this), ctx, {
+            partnerId: ctx.match[1],
+            event: ctx.match[2],
+          }),
       )
       .catch(async (err, ctx) => {
         await this.handleBotEventError('positive_feedback error: ', err, ctx);
       });
 
     this.bot
-      .action(/positive_feedback\?partnerId=(\d+)(?:&event=(\/\w+))?/, (ctx) =>
-        safeExecute(this.onNegativeFeedback.bind(this), ctx, {
-          partnerId: ctx.match[1],
-          event: ctx.match[2],
-        }),
+      .action(
+        /negative_feedback\?partnerId=(\d+)(?:&event=(\/?\w+(_\w+)*))?/,
+        (ctx) =>
+          safeExecute(this.onNegativeFeedback.bind(this), ctx, {
+            partnerId: ctx.match[1],
+            event: ctx.match[2],
+          }),
       )
       .catch(async (err, ctx) => {
         await this.handleBotEventError('negative_feedback error: ', err, ctx);
@@ -473,6 +477,8 @@ export class BotActionsService {
       const currentPartner = await this.userService.getCurrentPartner(userId);
       if (!currentPartner) return;
       const match = ctx.match && ctx.match[0];
+      console.log('match', match);
+      console.log('currentPartner', currentPartner);
       const feedbackKeyboard = Markup.inlineKeyboard([
         Markup.button.callback(
           '👍',
