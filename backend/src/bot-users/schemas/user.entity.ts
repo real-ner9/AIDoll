@@ -1,4 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { UserState } from '../types/user-state';
+import { UserRole } from '../types/user-role';
 
 @Entity()
 export class User {
@@ -41,6 +43,27 @@ export class User {
   @Column('text', { array: true, nullable: true })
   dislikes: string[];
 
+  @Column({ type: 'text', default: UserState.QUICK_SEARCH })
+  state: UserState;
+
+  @Column({ type: 'int', nullable: true })
+  age: number;
+
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
+  @Column({ type: 'text', nullable: true })
+  photoUrl: string;
+
+  @Column({ type: 'text', nullable: true })
+  role: UserRole;
+
+  @Column({ default: false })
+  isVisibleToOthers: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  name: string;
+
   constructor(userId: string) {
     this.userId = userId;
     this.isBlocked = false;
@@ -54,5 +77,13 @@ export class User {
     this.lastMessageTimestamp = null;
     this.likes = [];
     this.dislikes = [];
+    // По дефолту QUICK_SEARCH
+    this.state = UserState.QUICK_SEARCH;
+    this.age = null;
+    this.description = null;
+    this.photoUrl = null;
+    this.role = null;
+    this.isVisibleToOthers = false;
+    this.name = null;
   }
 }

@@ -1,30 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { Telegraf } from 'telegraf';
-import { Markup } from 'telegraf';
+import { Markup, Telegraf } from 'telegraf';
 import { I18nService } from 'nestjs-i18n';
 import { MessageService } from './message.service';
 import { RoomsService } from './room.service';
 import { UserService } from '../bot-users/user.service';
-import * as process from 'process';
 import * as cron from 'node-cron';
+import { UserState } from '../bot-users/types/user-state';
 
 async function safeExecute(fn: Function, ctx, ...args: any[]) {
   try {
     await fn(ctx, ...args);
   } catch (error) {
-    console.error('SafeExecute error:', error.message);
+    console.error('chat-actions SafeExecute error:', error.message);
 
     ctx
       .reply(
         `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
         this.getFindPartnerKeyboard(),
       )
-      .catch((err) => console.error(err));
+      .catch((err) => console.error('chat-actions sageExecute error: ', err));
   }
 }
 
 @Injectable()
-export class BotActionsService {
+export class ChatActionsService {
   lang = 'ru';
   bot: Telegraf;
 
@@ -45,23 +44,14 @@ export class BotActionsService {
         try {
           await this.userService.blockUser(userId);
         } catch (err) {
-          console.error(err.message);
+          console.error('chat-actions error: ', err.message);
         }
       }
     }
   }
 
-  init(): void {
-    process.env.TZ = 'Europe/Moscow';
-    process.on('unhandledRejection', (reason) => {
-      console.error('Unhandled Promise Rejection:', reason);
-    });
-
-    process.on('uncaughtException', (error) => {
-      console.error('Uncaught Exception:', error);
-    });
-
-    this.bot = new Telegraf(process.env.BOT_TOKEN);
+  init(bot: Telegraf): void {
+    this.bot = bot;
 
     cron.schedule(
       '0 0 18 * * *',
@@ -150,25 +140,14 @@ export class BotActionsService {
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end error: ', err, ctx);
       });
-    this.bot
-      .on('message', async (ctx) => {
-        try {
-          await this.messageService.forwardMessage(this.bot, ctx);
-        } catch (error) {
-          console.error('An error occurred while forwarding a message:', error);
-          ctx
-            .reply(
-              `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пишите в чат @govirtchat`,
-              this.getFindPartnerKeyboard(),
-            )
-            .catch((err) => console.error(err));
-          return;
-        }
-      })
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('message error: ', err, ctx);
-      });
 
+    this.bot
+      .action('main_menu', (ctx) =>
+        safeExecute(this.onMainMenu.bind(this), ctx),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('main_menu error: ', err, ctx);
+      });
     this.bot
       .action('find_partner', (ctx) =>
         safeExecute(this.onFindPartner.bind(this), ctx),
@@ -230,10 +209,20 @@ export class BotActionsService {
       .catch(async (err, ctx) => {
         await this.handleBotEventError('negative_feedback error: ', err, ctx);
       });
+  }
 
-    this.bot.launch().catch((err) => {
-      console.error('launch error: ', err);
-    });
+  async onSendMessage(ctx) {
+    try {
+      await this.messageService.forwardMessage(this.bot, ctx);
+    } catch (error) {
+      console.error('An error occurred while forwarding a message:', error);
+      return ctx
+        .reply(
+          `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пишите в чат @govirtchat`,
+          this.getFindPartnerKeyboard(),
+        )
+        .catch((err) => console.error(err));
+    }
   }
 
   async onPositiveFeedback(
@@ -349,6 +338,19 @@ export class BotActionsService {
       console.error('onFindPartner error', e.message);
     }
   }
+  async onMainMenu(ctx): Promise<void> {
+    try {
+      const userId = ctx.from.id.toString();
+      await this.userService.setState(userId, UserState.QUICK_SEARCH);
+      await ctx
+        .reply('Выбери, чем хочешь заняться', this.getFindPartnerKeyboard())
+        .catch(async (err, ctx) => {
+          await this.handleBotEventError('events.searchPartner: ', err, ctx);
+        });
+    } catch (e) {
+      console.error('onFindPartner error', e.message);
+    }
+  }
 
   async onStopSearch(ctx): Promise<void> {
     try {
@@ -373,20 +375,24 @@ export class BotActionsService {
 
   getFindPartnerKeyboard(hideNotificationButton = false): any {
     const buttons = [
-      Markup.button.callback(
-        this.i18n.t('events.findPartner', { lang: this.lang }),
-        'find_partner',
-      ),
+      [
+        Markup.button.callback(
+          this.i18n.t('events.findPartner', { lang: this.lang }),
+          'find_partner',
+        ),
+      ],
+      [Markup.button.callback('📄 Смотреть анкеты', 'browsing_profiles')],
+      [Markup.button.callback('✏️ Редактировать профиль', 'edit_profile')],
     ];
 
-    if (hideNotificationButton) {
-      buttons.push(
-        Markup.button.callback(
-          this.i18n.t('events.hideNotification', { lang: this.lang }),
-          'hide_notification',
-        ),
-      );
-    }
+    // if (hideNotificationButton) {
+    //   buttons.push([
+    //     Markup.button.callback(
+    //       this.i18n.t('events.hideNotification', { lang: this.lang }),
+    //       'hide_notification',
+    //     ),
+    //   ]);
+    // }
     return Markup.inlineKeyboard(buttons);
   }
 

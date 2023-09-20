@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { IsNull, Not, Repository } from 'typeorm';
 import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserState } from './types/user-state';
+import { UserRole } from './types/user-role';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -55,7 +57,7 @@ export class UserService {
     this.userCache = {};
   }
 
-  private async getUserFromCacheOrDB(userId: string): Promise<User | null> {
+  async getUserFromCacheOrDB(userId: string): Promise<User | null> {
     if (this.userCache[userId]) {
       return this.userCache[userId];
     }
@@ -352,6 +354,126 @@ export class UserService {
       }
     } catch (e) {
       console.error('updateBlockStatusForUsers error:', e.message);
+    }
+  }
+
+  async getUserState(userId: string): Promise<UserState> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.state;
+  }
+
+  async setState(userId: string, state: UserState): Promise<void> {
+    let user = await this.getUserFromCacheOrDB(userId);
+    if (!user) {
+      user = new User(userId);
+    }
+
+    user.state = state;
+    await this.userRepository.save(user);
+    this.userCache[userId] = user; // Update the cache
+  }
+
+  async getName(userId: string): Promise<string> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.name;
+  }
+
+  async setName(userId: string, name: string) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (name && user) {
+      user.name = name;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async getAge(userId: string): Promise<number> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.age;
+  }
+
+  async setAge(userId: string, age: string | number) {
+    const preparedAge = +age;
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (preparedAge && user) {
+      user.age = preparedAge;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async getUserRole(userId: string): Promise<UserRole> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.role;
+  }
+
+  async setRole(userId: string, role: UserRole) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (role && user) {
+      user.role = role;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async getDescription(userId: string): Promise<string> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.description;
+  }
+
+  async setDescription(userId: string, description: string) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (description && user) {
+      user.description = description;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async getPhoto(userId: string): Promise<string> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.photoUrl;
+  }
+
+  async getProfileVisible(userId: string): Promise<boolean> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user.isVisibleToOthers;
+  }
+
+  async setProfileVisible(userId: string, isVisible: boolean) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (user) {
+      user.isVisibleToOthers = isVisible;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async setPhoto(userId: string, photoId: string) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (user) {
+      user.photoUrl = photoId;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
     }
   }
 }
