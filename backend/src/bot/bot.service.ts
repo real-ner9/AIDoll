@@ -32,8 +32,7 @@ export class BotService {
       if (userId) {
         // прокидываем userState в контекст, чтобы потом фильтровать где и что вводить пользователь
         try {
-          ctx.state.userState =
-            await this.userService.getUserState(userId);
+          ctx.state.userState = await this.userService.getUserState(userId);
         } catch (e) {
           console.error('getUserStateFromDB error: ', e.message);
         }

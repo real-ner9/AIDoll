@@ -430,6 +430,10 @@ export class UserActionsService {
           await this.userService.setPhoto(userId, photo[0].file_id);
         }
 
+        const isVisible = await this.userService.getProfileVisible(userId);
+        if (!isVisible) {
+          await this.userService.setProfileVisible(userId, true);
+        }
         await this.onEditProfile(ctx);
         return;
       }

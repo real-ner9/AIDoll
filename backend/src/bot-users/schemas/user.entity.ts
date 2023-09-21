@@ -1,6 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { UserState } from '../types/user-state';
 import { UserRole } from '../types/user-role';
+import { Like } from './like.entity';
+import { Dislike } from './dislike.entity';
+import { UserLiked } from './user-liked.entity';
+import { Match } from './match.entity';
 
 @Entity()
 export class User {
@@ -37,12 +41,6 @@ export class User {
   @Column({ type: 'bigint', nullable: true })
   lastMessageTimestamp: number;
 
-  @Column('text', { array: true, nullable: true })
-  likes: string[];
-
-  @Column('text', { array: true, nullable: true })
-  dislikes: string[];
-
   @Column({ type: 'text', default: UserState.QUICK_SEARCH })
   state: UserState;
 
@@ -64,6 +62,18 @@ export class User {
   @Column({ type: 'text', nullable: true })
   name: string;
 
+  @OneToMany(() => Like, (like) => like.user)
+  likes: Like[];
+
+  @OneToMany(() => Dislike, (dislike) => dislike.user)
+  dislikes: Dislike[];
+
+  @OneToMany(() => UserLiked, (userLiked) => userLiked.user)
+  userLikes: UserLiked[];
+
+  @OneToMany(() => Match, (match) => match.user)
+  matches: Match[];
+
   constructor(userId: string) {
     this.userId = userId;
     this.isBlocked = false;
@@ -75,8 +85,6 @@ export class User {
     this.lastSearchTimestamp = null;
     this.lastNotificationTimestamp = null;
     this.lastMessageTimestamp = null;
-    this.likes = [];
-    this.dislikes = [];
     // По дефолту QUICK_SEARCH
     this.state = UserState.QUICK_SEARCH;
     this.age = null;

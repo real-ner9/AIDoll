@@ -53,47 +53,47 @@ export class ChatActionsService {
   init(bot: Telegraf): void {
     this.bot = bot;
 
-    cron.schedule(
-      '0 0 18 * * *',
-      async () => {
-        const activeUsers = await this.userService.getAllActiveUsers();
-        const blockedUsers: string[] = [];
-        const unblockedUsers: string[] = [];
-
-        for (let i = 0; i < activeUsers.length; i++) {
-          setTimeout(async () => {
-            const user = activeUsers[i];
-            await this.bot.telegram
-              .sendMessage(
-                user.userId,
-                '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
-                this.getFindPartnerKeyboard(),
-              )
-              .then(async () => {
-                if (user.isBlocked) {
-                  unblockedUsers.push(user.userId);
-                }
-              })
-              .catch(async (e) => {
-                if (!user.isBlocked) {
-                  blockedUsers.push(user.userId);
-                }
-                console.error('cron schedule catch test error ', e.message);
-              });
-
-            if (i === activeUsers.length - 1) {
-              await this.userService.updateBlockStatusForUsers(
-                blockedUsers,
-                unblockedUsers,
-              );
-            }
-          }, i * 500);
-        }
-      },
-      {
-        timezone: 'Europe/Moscow',
-      },
-    );
+    // cron.schedule(
+    //   '0 0 18 * * *',
+    //   async () => {
+    //     const activeUsers = await this.userService.getAllActiveUsers();
+    //     const blockedUsers: string[] = [];
+    //     const unblockedUsers: string[] = [];
+    //
+    //     for (let i = 0; i < activeUsers.length; i++) {
+    //       setTimeout(async () => {
+    //         const user = activeUsers[i];
+    //         await this.bot.telegram
+    //           .sendMessage(
+    //             user.userId,
+    //             '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
+    //             this.getFindPartnerKeyboard(),
+    //           )
+    //           .then(async () => {
+    //             if (user.isBlocked) {
+    //               unblockedUsers.push(user.userId);
+    //             }
+    //           })
+    //           .catch(async (e) => {
+    //             if (!user.isBlocked) {
+    //               blockedUsers.push(user.userId);
+    //             }
+    //             console.error('cron schedule catch test error ', e.message);
+    //           });
+    //
+    //         if (i === activeUsers.length - 1) {
+    //           await this.userService.updateBlockStatusForUsers(
+    //             blockedUsers,
+    //             unblockedUsers,
+    //           );
+    //         }
+    //       }, i * 500);
+    //     }
+    //   },
+    //   {
+    //     timezone: 'Europe/Moscow',
+    //   },
+    // );
 
     this.bot.catch(async (err, ctx) => {
       await this.handleBotEventError('bot error', err, ctx);
@@ -470,7 +470,7 @@ export class ChatActionsService {
         const dislikes = await this.userService.getDislikes(userId);
         room = this.roomsService.createRoom(userId, dislikes);
         await this.userService.setActiveRoom(userId, room.id);
-        await this.notificationOtherUsers(userId);
+        // await this.notificationOtherUsers(userId);
       } catch (e) {
         console.error('findPartner if not room error', e.message);
       }

@@ -4,6 +4,10 @@ import { User } from './schemas/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserState } from './types/user-state';
 import { UserRole } from './types/user-role';
+import { Like } from './schemas/like.entity';
+import { Dislike } from './schemas/dislike.entity';
+import { Match } from './schemas/match.entity';
+import { UserLiked } from './schemas/user-liked.entity';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -18,6 +22,14 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Like)
+    private readonly likeRepository: Repository<Like>,
+    @InjectRepository(Dislike)
+    private readonly dislikeRepository: Repository<Dislike>,
+    @InjectRepository(Match)
+    private readonly matchRepository: Repository<Match>,
+    @InjectRepository(UserLiked)
+    private readonly userLikedRepository: Repository<UserLiked>,
   ) {
     setInterval(async () => {
       this.invalidateCache();
@@ -61,7 +73,9 @@ export class UserService {
     if (this.userCache[userId]) {
       return this.userCache[userId];
     }
-    const user = await this.userRepository.findOne({ where: { userId } });
+    const user = await this.userRepository.findOne({
+      where: { userId },
+    });
     if (user) {
       this.updateCache(user);
     }
@@ -153,16 +167,22 @@ export class UserService {
   }
 
   async getPastPartners(userId: string): Promise<string[]> {
-    const user = await this.getUserFromCacheOrDB(userId);
+    const user = await this.userRepository.findOne({
+      where: { userId },
+      relations: ['dislikes'],
+    });
     if (!user) {
       return [];
     }
 
     const pastPartners = user.pastPartners || [];
 
-    const dislikes = user.dislikes || [];
+    // Извлекаем ID партнеров, которых пользователь "дизлайкнул"
+    const dislikedUserIds = user.dislikes
+      ? user.dislikes.map((dislike) => dislike.dislikedUserId)
+      : [];
 
-    return Array.from(new Set([...pastPartners, ...dislikes]));
+    return Array.from(new Set([...pastPartners, ...dislikedUserIds]));
   }
 
   async getCurrentPartner(userId: string): Promise<string> {
@@ -200,6 +220,7 @@ export class UserService {
   async usersWithoutRoom(userId: string): Promise<string[]> {
     const DELAY = 60 * 60 * 1000;
     const preparedDelay = Date.now() - DELAY;
+
     const availablePartners = await this.userRepository
       .createQueryBuilder('user')
       .select('user.userId')
@@ -207,14 +228,15 @@ export class UserService {
       .andWhere('user.isBlocked = FALSE')
       .andWhere('user.activeRoom IS NULL')
       .andWhere('user.currentPartner IS NULL')
-      .andWhere(':userId = ANY(user.likes)', { userId })
+      .andWhere('user.userId NOT IN (SELECT unnest(user.pastPartners))')
       .andWhere(
         '(user.lastNotificationTimestamp IS NULL OR user.lastNotificationTimestamp <= :preparedDelay)',
         { preparedDelay },
       )
-      .andWhere('user.userId NOT IN (SELECT unnest(user.pastPartners))', {
-        userId,
-      })
+      .andWhere(
+        'user.userId IN (SELECT match.matchedUserId FROM Match match WHERE match.user_id = :userId)',
+        { userId },
+      )
       .getRawMany();
 
     return availablePartners.map((user) => user.user_userId);
@@ -278,47 +300,60 @@ export class UserService {
   }
 
   async addLike(userId: string, partnerId: string): Promise<void> {
-    const user = await this.getUserFromCacheOrDB(userId);
-    if (user) {
-      if (!user.likes) user.likes = [];
-      if (!user.dislikes) user.dislikes = [];
+    const user = await this.userRepository.findOne({
+      where: { userId },
+      relations: ['dislikes', 'likes'],
+    });
+    if (!user) return;
 
-      // Удаляем partnerId из dislikes, если он там есть
-      user.dislikes = user.dislikes.filter((id) => id !== partnerId);
+    const existingDislike = user.dislikes.find(
+      (dislike) => dislike.dislikedUserId === partnerId,
+    );
+    if (existingDislike) {
+      await this.dislikeRepository.remove(existingDislike);
+    }
 
-      // Добавляем partnerId в likes, если его там нет
-      if (!user.likes.includes(partnerId)) {
-        user.likes.push(partnerId);
-      }
-
-      await this.userRepository.save(user);
-      this.updateCache(user);
+    const existingLike = user.likes.find(
+      (like) => like.likedUserId === partnerId,
+    );
+    if (!existingLike) {
+      const newLike = new Like(user, partnerId);
+      await this.likeRepository.save(newLike);
     }
   }
 
   async addDislike(userId: string, partnerId: string): Promise<void> {
-    const user = await this.getUserFromCacheOrDB(userId);
-    if (user) {
-      if (!user.likes) user.likes = [];
-      if (!user.dislikes) user.dislikes = [];
+    const user = await this.userRepository.findOne({
+      where: { userId },
+      relations: ['dislikes', 'likes'],
+    });
+    if (!user) return;
 
-      // Удаляем partnerId из likes, если он там есть
-      user.likes = user.likes.filter((id) => id !== partnerId);
+    // Удаляем partnerId из likes, если он там есть
+    const existingLike = user.likes.find(
+      (like) => like.likedUserId === partnerId,
+    );
+    if (existingLike) {
+      await this.likeRepository.remove(existingLike);
+    }
 
-      // Добавляем partnerId в dislikes, если его там нет
-      if (!user.dislikes.includes(partnerId)) {
-        user.dislikes.push(partnerId);
-      }
-
-      await this.userRepository.save(user);
-      this.updateCache(user);
+    // Добавляем partnerId в dislikes, если его там нет
+    const existingDislike = user.dislikes.find(
+      (dislike) => dislike.dislikedUserId === partnerId,
+    );
+    if (!existingDislike) {
+      const newDislike = new Dislike(user, partnerId);
+      await this.dislikeRepository.save(newDislike);
     }
   }
 
   async getDislikes(userId: string): Promise<string[]> {
-    const user = await this.getUserFromCacheOrDB(userId);
+    const user = await this.userRepository.findOne({
+      where: { userId },
+      relations: ['dislikes'],
+    });
 
-    return user.dislikes || [];
+    return user?.dislikes.map((dislike) => dislike.dislikedUserId) || [];
   }
 
   async getAllActiveUsers(): Promise<User[]> {
@@ -360,7 +395,7 @@ export class UserService {
   async getUserState(userId: string): Promise<UserState> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.state;
+    return user?.state;
   }
 
   async setState(userId: string, state: UserState): Promise<void> {
@@ -377,24 +412,26 @@ export class UserService {
   async getName(userId: string): Promise<string> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.name;
+    return user?.name;
   }
 
   async setName(userId: string, name: string) {
-    const user = await this.getUserFromCacheOrDB(userId);
+    let user = await this.getUserFromCacheOrDB(userId);
 
-    if (name && user) {
-      user.name = name;
-
-      await this.userRepository.save(user);
-      this.updateCache(user);
+    if (!user) {
+      user = new User(userId);
     }
+
+    user.name = name;
+
+    await this.userRepository.save(user);
+    this.updateCache(user);
   }
 
   async getAge(userId: string): Promise<number> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.age;
+    return user?.age;
   }
 
   async setAge(userId: string, age: string | number) {
@@ -412,7 +449,7 @@ export class UserService {
   async getUserRole(userId: string): Promise<UserRole> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.role;
+    return user?.role;
   }
 
   async setRole(userId: string, role: UserRole) {
@@ -429,7 +466,7 @@ export class UserService {
   async getDescription(userId: string): Promise<string> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.description;
+    return user?.description;
   }
 
   async setDescription(userId: string, description: string) {
@@ -446,13 +483,13 @@ export class UserService {
   async getPhoto(userId: string): Promise<string> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.photoUrl;
+    return user?.photoUrl;
   }
 
   async getProfileVisible(userId: string): Promise<boolean> {
     const user = await this.getUserFromCacheOrDB(userId);
 
-    return user.isVisibleToOthers;
+    return user?.isVisibleToOthers;
   }
 
   async setProfileVisible(userId: string, isVisible: boolean) {
