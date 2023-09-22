@@ -53,47 +53,47 @@ export class ChatActionsService {
   init(bot: Telegraf): void {
     this.bot = bot;
 
-    // cron.schedule(
-    //   '0 0 18 * * *',
-    //   async () => {
-    //     const activeUsers = await this.userService.getAllActiveUsers();
-    //     const blockedUsers: string[] = [];
-    //     const unblockedUsers: string[] = [];
-    //
-    //     for (let i = 0; i < activeUsers.length; i++) {
-    //       setTimeout(async () => {
-    //         const user = activeUsers[i];
-    //         await this.bot.telegram
-    //           .sendMessage(
-    //             user.userId,
-    //             '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
-    //             this.getFindPartnerKeyboard(),
-    //           )
-    //           .then(async () => {
-    //             if (user.isBlocked) {
-    //               unblockedUsers.push(user.userId);
-    //             }
-    //           })
-    //           .catch(async (e) => {
-    //             if (!user.isBlocked) {
-    //               blockedUsers.push(user.userId);
-    //             }
-    //             console.error('cron schedule catch test error ', e.message);
-    //           });
-    //
-    //         if (i === activeUsers.length - 1) {
-    //           await this.userService.updateBlockStatusForUsers(
-    //             blockedUsers,
-    //             unblockedUsers,
-    //           );
-    //         }
-    //       }, i * 500);
-    //     }
-    //   },
-    //   {
-    //     timezone: 'Europe/Moscow',
-    //   },
-    // );
+    cron.schedule(
+      '0 0 18 * * *',
+      async () => {
+        const activeUsers = await this.userService.getAllActiveUsers();
+        const blockedUsers: string[] = [];
+        const unblockedUsers: string[] = [];
+
+        for (let i = 0; i < activeUsers.length; i++) {
+          setTimeout(async () => {
+            const user = activeUsers[i];
+            await this.bot.telegram
+              .sendMessage(
+                user.userId,
+                '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
+                this.getFindPartnerKeyboard(),
+              )
+              .then(async () => {
+                if (user.isBlocked) {
+                  unblockedUsers.push(user.userId);
+                }
+              })
+              .catch(async (e) => {
+                if (!user.isBlocked) {
+                  blockedUsers.push(user.userId);
+                }
+                console.error('cron schedule catch test error ', e.message);
+              });
+
+            if (i === activeUsers.length - 1) {
+              await this.userService.updateBlockStatusForUsers(
+                blockedUsers,
+                unblockedUsers,
+              );
+            }
+          }, i * 500);
+        }
+      },
+      {
+        timezone: 'Europe/Moscow',
+      },
+    );
 
     this.bot.catch(async (err, ctx) => {
       await this.handleBotEventError('bot error', err, ctx);
@@ -515,33 +515,31 @@ export class ChatActionsService {
     const userId = ctx.from.id.toString();
     const room = this.roomsService.findRoomByUserId(userId);
 
-    if (room && room.active) {
-      try {
-        const partnerId = await this.userService.getCurrentPartner(userId);
-        if (partnerId) {
-          await this.userService.setCurrentPartner(partnerId, null);
-          await this.userService.addPastPartner(userId, partnerId);
-          await this.userService.addPastPartner(partnerId, userId);
-          await this.userService.setActiveRoom(partnerId, null);
-          this.roomsService.deactivateRoom(room.id);
-          await this.bot.telegram
-            .sendMessage(
-              partnerId,
-              this.i18n.t('events.chatEnded', { lang: this.lang }),
+    try {
+      const partnerId = await this.userService.getCurrentPartner(userId);
+      if (partnerId) {
+        await this.userService.setCurrentPartner(partnerId, null);
+        await this.userService.addPastPartner(userId, partnerId);
+        await this.userService.addPastPartner(partnerId, userId);
+        await this.userService.setActiveRoom(partnerId, null);
+        room?.active && this.roomsService.deactivateRoom(room.id);
+        await this.bot.telegram
+          .sendMessage(
+            partnerId,
+            this.i18n.t('events.chatEnded', { lang: this.lang }),
+            this.getFindPartnerKeyboard(),
+          )
+          .then()
+          .catch((error) => {
+            console.error('An error:', error.message);
+            ctx.reply(
+              `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
               this.getFindPartnerKeyboard(),
-            )
-            .then()
-            .catch((error) => {
-              console.error('An error:', error.message);
-              ctx.reply(
-                `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-                this.getFindPartnerKeyboard(),
-              );
-            });
-        }
-      } catch (e) {
-        console.error('onEndChat if partnerId error', e.message);
+            );
+          });
       }
+    } catch (e) {
+      console.error('onEndChat if partnerId error', e.message);
     }
 
     try {

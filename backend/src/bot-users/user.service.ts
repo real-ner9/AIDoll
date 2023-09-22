@@ -514,4 +514,98 @@ export class UserService {
       this.updateCache(user);
     }
   }
+
+  async getRandomUser(userId: string): Promise<User> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin(
+        Like,
+        'like',
+        'like.user_id = :userId AND like.likedUserId = user.userId',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Dislike,
+        'dislike',
+        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .andWhere('like.id IS NULL')
+      .orderBy('RANDOM()')
+      .getOne();
+
+    return user || null;
+  }
+
+  async getLikedUser(userId: string): Promise<User> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin(
+        Like,
+        'likedMe',
+        'likedMe.user_id = user.userId AND likedMe.likedUserId = :userId',
+        { userId },
+      )
+      .leftJoin(
+        Like,
+        'iLiked',
+        'iLiked.likedUserId = user.userId AND iLiked.user_id = :userId',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Dislike,
+        'dislike',
+        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .andWhere('likedMe.id IS NOT NULL')
+      .andWhere('iLiked.id IS NULL')
+      .getOne();
+
+    return user || null;
+  }
+
+  async getMatchesUser(
+    userId: string,
+    offset: number = 0,
+  ): Promise<User | null> {
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoin(
+        Like,
+        'likeOutgoing',
+        'likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId',
+        { userId },
+      )
+      .innerJoin(
+        Like,
+        'likeIncoming',
+        'likeIncoming.likedUserId = :userId AND likeIncoming.user_id = user.userId',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Dislike,
+        'dislike',
+        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .orderBy('user.userId', 'ASC') // Указывает порядок сортировки
+      .skip(offset)
+      .take(1)
+      .getOne();
+
+    return user || null;
+  }
 }
