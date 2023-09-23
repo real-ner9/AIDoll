@@ -301,7 +301,7 @@ export class ProfileMatchActionsService {
             type: 'photo',
             media: imageUrlToSend,
             caption: captionText,
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
           },
           replyOptions,
         )
@@ -383,7 +383,7 @@ export class ProfileMatchActionsService {
             type: 'photo',
             media: partnerImageUrlToSend,
             caption: captionText,
-            parse_mode: 'Markdown',
+            parse_mode: 'MarkdownV2',
           },
           replyOptions,
         )
@@ -492,13 +492,15 @@ export class ProfileMatchActionsService {
 
   getCaptionText(user) {
     return (
-      this.escapeMarkdown(user.name || '') +
-      '\n' +
-      (user.age || '') +
-      '\n' +
-      this.escapeMarkdown(UserRoleMap[user.role]) +
-      '\n' +
-      this.escapeMarkdown(user.description || '')
+      user.name ||
+      '' +
+        '\n' +
+        (user.age || '') +
+        '\n' +
+        UserRoleMap[user.role] +
+        '\n' +
+        user.description ||
+      ''
     );
   }
 
