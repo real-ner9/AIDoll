@@ -490,18 +490,10 @@ export class ProfileMatchActionsService {
     return str.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
   }
 
-  getCaptionText(user) {
-    return (
-      user.name ||
-      '' +
-        '\n' +
-        (user.age || '') +
-        '\n' +
-        UserRoleMap[user.role] +
-        '\n' +
-        user.description ||
-      ''
-    );
+  getCaptionText(user): string {
+    return `${user.name}\n${user.age}\n${UserRoleMap[user.role]}\n${
+      user.description
+    }`;
   }
 
   getUserId(ctx): string {
