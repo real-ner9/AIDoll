@@ -301,7 +301,7 @@ export class ProfileMatchActionsService {
             type: 'photo',
             media: imageUrlToSend,
             caption: captionText,
-            parse_mode: 'MarkdownV2',
+            parse_mode: 'HTML',
           },
           replyOptions,
         )
@@ -383,7 +383,7 @@ export class ProfileMatchActionsService {
             type: 'photo',
             media: partnerImageUrlToSend,
             caption: captionText,
-            parse_mode: 'MarkdownV2',
+            parse_mode: 'HTML',
           },
           replyOptions,
         )
