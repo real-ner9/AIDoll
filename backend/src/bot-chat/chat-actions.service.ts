@@ -54,7 +54,7 @@ export class ChatActionsService {
     this.bot = bot;
 
     cron.schedule(
-      '0 20 15 * * *',
+      '0 0 16 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];
@@ -66,8 +66,7 @@ export class ChatActionsService {
             await this.bot.telegram
               .sendMessage(
                 user.userId,
-                '🌆 Теперь в боте можно заполнять анкету и лайкать других. Самое время проверить 🥳🌟',
-                // '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
+                '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
                 this.getFindPartnerKeyboard(),
               )
               .then(async () => {
