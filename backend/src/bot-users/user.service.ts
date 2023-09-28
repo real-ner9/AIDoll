@@ -604,26 +604,26 @@ export class UserService {
       .innerJoin(
         Like,
         'likeOutgoing',
-        'likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId',
+        '(likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId)',
         { userId },
       )
       .innerJoin(
         Like,
         'likeIncoming',
-        'likeIncoming.likedUserId = :userId AND likeIncoming.user_id = user.userId',
+        '(likeIncoming.user_id = user.userId AND likeIncoming.likedUserId = :userId)',
         { userId },
       )
       .leftJoinAndSelect(
         Dislike,
         'dislike',
-        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
         { userId },
       )
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
       .andWhere('user.isVisibleToOthers = true')
       .andWhere('dislike.id IS NULL')
-      .orderBy('user.userId', 'ASC') // Указывает порядок сортировки
+      .orderBy('user.id', 'DESC') // Указывает порядок сортировки
       .skip(offset)
       .take(1)
       .getOne();
