@@ -42,7 +42,7 @@ export class ChatActionsService {
       const userId = ctx?.from?.id.toString();
       if (userId) {
         try {
-          await this.userService.blockUser(userId);
+          // await this.userService.blockUser(userId);
         } catch (err) {
           console.error('chat-actions error: ', err.message);
         }
@@ -623,7 +623,7 @@ export class ChatActionsService {
             // код ошибки для "заблокированного пользователя"
             if (userId) {
               try {
-                await this.userService.blockUser(userId);
+                // await this.userService.blockUser(userId);
               } catch (err) {
                 console.error(err.message);
               }

@@ -32,6 +32,10 @@ export class BotService {
       if (userId) {
         // прокидываем userState в контекст, чтобы потом фильтровать где и что вводить пользователь
         try {
+          const user = await this.userService.getUserFromCacheOrDB(userId);
+          if (user.isBlocked) {
+            await this.userService.unblockUser(userId);
+          }
           ctx.state.userState = await this.userService.getUserState(userId);
         } catch (e) {
           console.error('getUserStateFromDB error: ', e.message);
@@ -79,7 +83,7 @@ export class BotService {
       const userId = ctx?.from?.id.toString();
       if (userId) {
         try {
-          await this.userService.blockUser(userId);
+          // await this.userService.blockUser(userId);
         } catch (err) {
           console.error('chat-actions error: ', err.message);
         }

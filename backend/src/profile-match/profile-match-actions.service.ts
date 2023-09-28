@@ -153,7 +153,7 @@ export class ProfileMatchActionsService {
       const userId = ctx?.from?.id.toString();
       if (userId) {
         try {
-          await this.userService.blockUser(userId);
+          // await this.userService.blockUser(userId);
         } catch (err) {
           console.error('user-actions error: ', err.message);
         }
