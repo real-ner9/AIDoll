@@ -33,7 +33,7 @@ export class BotService {
         // прокидываем userState в контекст, чтобы потом фильтровать где и что вводить пользователь
         try {
           const user = await this.userService.getUserFromCacheOrDB(userId);
-          if (user.isBlocked) {
+          if (user?.isBlocked) {
             await this.userService.unblockUser(userId);
           }
           ctx.state.userState = await this.userService.getUserState(userId);
