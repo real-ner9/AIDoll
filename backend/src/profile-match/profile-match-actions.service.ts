@@ -288,12 +288,19 @@ export class ProfileMatchActionsService {
                 `remove_match?partnerId=${user.userId}&offset=${offset}`,
               ),
             ],
-            [
-              Markup.button.callback(
-                'Позвать в чат',
-                `request_to_chat?partnerId=${user.userId}&offset=${offset}`,
-              ),
-            ],
+            !user.currentPartner
+              ? [
+                  Markup.button.callback(
+                    'Позвать в чат',
+                    `request_to_chat?partnerId=${user.userId}&offset=${offset}`,
+                  ),
+                ]
+              : [
+                  Markup.button.callback(
+                    'Позвать в чат (пользователь занят)',
+                    `-`,
+                  ),
+                ],
             ...keyboard,
           ];
         } else {
@@ -366,12 +373,19 @@ export class ProfileMatchActionsService {
       const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
       const partnerKeyboard = hasPartnerLikedUser
         ? [
-            [
-              Markup.button.callback(
-                'Позвать в чат',
-                `request_to_chat?partnerId=${user.userId}&offset=0`,
-              ),
-            ],
+            !user.currentPartner
+              ? [
+                  Markup.button.callback(
+                    'Позвать в чат',
+                    `request_to_chat?partnerId=${user.userId}&offset=0`,
+                  ),
+                ]
+              : [
+                  Markup.button.callback(
+                    'Позвать в чат (пользователь занят)',
+                    `-`,
+                  ),
+                ],
             [Markup.button.callback('Главное меню', 'main_menu')],
           ]
         : [
@@ -428,55 +442,62 @@ export class ProfileMatchActionsService {
       const partnerImageUrlToSend =
         partner?.photoUrl || this.placeholderImageUrl;
       const partnerKeyboard = [
-        [
-          Markup.button.callback(
-            'Позвать в чат',
-            `request_to_chat?partnerId=${user.userId}&offset=0`,
-          ),
-        ],
+        !user.currentPartner
+          ? [
+              Markup.button.callback(
+                'Позвать в чат',
+                `request_to_chat?partnerId=${user.userId}&offset=0`,
+              ),
+            ]
+          : [Markup.button.callback('Позвать в чат (пользователь занят)', `-`)],
         [Markup.button.callback('Главное меню', 'main_menu')],
       ];
       const userKeyboard = [
-        [
-          Markup.button.callback(
-            'Позвать в чат',
-            `request_to_chat?partnerId=${partner.userId}&offset=0`,
-          ),
-        ],
+        !partner.currentPartner
+          ? [
+              Markup.button.callback(
+                'Позвать в чат',
+                `request_to_chat?partnerId=${partner.userId}&offset=0`,
+              ),
+            ]
+          : [Markup.button.callback('Позвать в чат (пользователь занят)', `-`)],
         [Markup.button.callback('Главное меню', 'main_menu')],
       ];
-      await ctx.telegram
-        .sendPhoto(userId, partnerImageUrlToSend, {
-          reply_markup: Markup.inlineKeyboard(userKeyboard).reply_markup,
-          parse_mode: 'HTML',
-          caption: `У тебя мэтч с \n${this.getCaptionText(
-            partner,
-            partner.showUsername,
-          )}`,
-        })
-        .catch(async (err) => {
-          await this.handleBotEventError(
-            'onEditProfile ctx error:  ',
-            err,
-            ctx,
-          );
-        });
-      await ctx.telegram
-        .sendPhoto(partnerId, userImageUrlToSend, {
-          reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
-          parse_mode: 'HTML',
-          caption: `У тебя мэтч с \n${this.getCaptionText(
-            user,
-            user.showUsername,
-          )}`,
-        })
-        .catch(async (err) => {
-          await this.handleBotEventError(
-            'onEditProfile ctx error:  ',
-            err,
-            ctx,
-          );
-        });
+
+      !user.currentPartner &&
+        (await ctx.telegram
+          .sendPhoto(userId, partnerImageUrlToSend, {
+            reply_markup: Markup.inlineKeyboard(userKeyboard).reply_markup,
+            parse_mode: 'HTML',
+            caption: `У тебя мэтч с \n${this.getCaptionText(
+              partner,
+              partner.showUsername,
+            )}`,
+          })
+          .catch(async (err) => {
+            await this.handleBotEventError(
+              'onEditProfile ctx error:  ',
+              err,
+              ctx,
+            );
+          }));
+      !partner.currentPartner &&
+        (await ctx.telegram
+          .sendPhoto(partnerId, userImageUrlToSend, {
+            reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
+            parse_mode: 'HTML',
+            caption: `У тебя мэтч с \n${this.getCaptionText(
+              user,
+              user.showUsername,
+            )}`,
+          })
+          .catch(async (err) => {
+            await this.handleBotEventError(
+              'onEditProfile ctx error:  ',
+              err,
+              ctx,
+            );
+          }));
     } catch (e) {
       console.error('like error: ', e.message);
     }
