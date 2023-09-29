@@ -175,7 +175,6 @@ export class ChatActionsService {
       });
     this.bot
       .action('end_chat', async (ctx) => {
-        console.log(ctx.state?.userState);
         return ctx.state?.userState === UserState.IN_CHAT
           ? safeExecute(this.onEndChat.bind(this), ctx)
           : safeExecute(this.feedBack.bind(this), ctx);
