@@ -52,6 +52,7 @@ export class BotService {
       .on('message', async (ctx) => {
         switch (ctx.state.userState) {
           case UserState.QUICK_SEARCH:
+          case UserState.IN_CHAT:
             await this.chatActionsService.onSendMessage(ctx);
             break;
           case UserState.FILLING_AGE:

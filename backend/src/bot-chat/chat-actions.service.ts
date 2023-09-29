@@ -129,7 +129,11 @@ export class ChatActionsService {
         await this.handleBotEventError('change error: ', err, ctx);
       });
     this.bot
-      .hears('/end', (ctx) => safeExecute(this.feedBack.bind(this), ctx))
+      .hears('/end', (ctx) => {
+        return ctx.state?.userState === UserState.IN_CHAT
+          ? safeExecute(this.onEndChat.bind(this), ctx)
+          : safeExecute(this.feedBack.bind(this), ctx);
+      })
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end error: ', err, ctx);
       });
@@ -170,9 +174,12 @@ export class ChatActionsService {
         await this.handleBotEventError('change_partner: ', err, ctx);
       });
     this.bot
-      .action('end_chat', async (ctx) =>
-        safeExecute(this.feedBack.bind(this), ctx),
-      )
+      .action('end_chat', async (ctx) => {
+        console.log(ctx.state?.userState);
+        return ctx.state?.userState === UserState.IN_CHAT
+          ? safeExecute(this.onEndChat.bind(this), ctx)
+          : safeExecute(this.feedBack.bind(this), ctx);
+      })
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end_chat error: ', err, ctx);
       });

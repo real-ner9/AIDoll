@@ -582,12 +582,13 @@ export class ProfileMatchActionsService {
           console.error('feelingAge deleteMessage error: ', e.message),
         );
       const room = randomStringGenerator();
-      await this.userService.setState(userId, UserState.QUICK_SEARCH);
-      await this.userService.setState(partnerId, UserState.QUICK_SEARCH);
+
       await this.userService.setActiveRoom(userId, room);
       await this.userService.setActiveRoom(partnerId, room);
       await this.userService.setCurrentPartner(userId, partnerId);
       await this.userService.setCurrentPartner(partnerId, userId);
+      await this.userService.setState(userId, UserState.IN_CHAT);
+      await this.userService.setState(partnerId, UserState.IN_CHAT);
       const partnerChatKeyboard = Markup.inlineKeyboard([
         Markup.button.callback('Завершить чат', 'end_chat'),
       ]);

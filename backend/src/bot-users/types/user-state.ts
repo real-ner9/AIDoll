@@ -39,4 +39,8 @@ export enum UserState {
    * Смотрит мэтчи
    */
   BROWSING_MATCHES = 'BROWSING_MATCHES',
+  /**
+   * В чате с кем-то из мэтчей (добавлено, чтобы не вылезало уведомление с оценкой после разговора)
+   */
+  IN_CHAT = 'IN_CHAT',
 }
