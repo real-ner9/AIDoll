@@ -68,6 +68,19 @@ export class ProfileMatchActionsService {
       });
 
     this.bot
+      .action(
+        /^remove_match\?partnerId=([^&]+)(?:&offset=([^&]+))?/,
+        async (ctx) =>
+          safeExecute(this.onRemoveMatch.bind(this), ctx, {
+            partnerId: ctx.match[1],
+            offset: +ctx.match[2],
+          }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('open_profile error: ', err, ctx);
+      });
+
+    this.bot
       .action('browsing_likes', async (ctx) =>
         safeExecute(this.onBrowsingLikes.bind(this), ctx),
       )
@@ -271,7 +284,13 @@ export class ProfileMatchActionsService {
             ],
             [
               Markup.button.callback(
-                'Перейти в чат',
+                'Убрать из мэтчей',
+                `remove_match?partnerId=${user.userId}&offset=${offset}`,
+              ),
+            ],
+            [
+              Markup.button.callback(
+                'Позвать в чат',
                 `request_to_chat?partnerId=${user.userId}&offset=${offset}`,
               ),
             ],
@@ -349,7 +368,7 @@ export class ProfileMatchActionsService {
         ? [
             [
               Markup.button.callback(
-                'Перейти в чат',
+                'Позвать в чат',
                 `request_to_chat?partnerId=${user.userId}&offset=0`,
               ),
             ],
@@ -411,7 +430,7 @@ export class ProfileMatchActionsService {
       const partnerKeyboard = [
         [
           Markup.button.callback(
-            'Перейти в чат',
+            'Позвать в чат',
             `request_to_chat?partnerId=${user.userId}&offset=0`,
           ),
         ],
@@ -420,7 +439,7 @@ export class ProfileMatchActionsService {
       const userKeyboard = [
         [
           Markup.button.callback(
-            'Перейти в чат',
+            'Позвать в чат',
             `request_to_chat?partnerId=${partner.userId}&offset=0`,
           ),
         ],
@@ -570,6 +589,21 @@ export class ProfileMatchActionsService {
         });
     } catch (e) {
       console.error('onBrowsingLikes error: ', e.message);
+    }
+  }
+
+  async onRemoveMatch(
+    ctx,
+    { partnerId, offset }: { partnerId?: string; offset?: number },
+  ) {
+    const userId = this.getUserId(ctx);
+    try {
+      await this.userService.addDislike(userId, partnerId);
+      await this.userService.addDislike(partnerId, userId);
+
+      await this.browsingProfile(ctx, offset !== 0 ? offset - 1 : 0);
+    } catch (e) {
+      console.error('onRemoveMatch error: ', e.message);
     }
   }
 
