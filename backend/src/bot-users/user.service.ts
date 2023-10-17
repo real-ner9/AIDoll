@@ -26,10 +26,6 @@ export class UserService {
     private readonly likeRepository: Repository<Like>,
     @InjectRepository(Dislike)
     private readonly dislikeRepository: Repository<Dislike>,
-    @InjectRepository(Match)
-    private readonly matchRepository: Repository<Match>,
-    @InjectRepository(UserLiked)
-    private readonly userLikedRepository: Repository<UserLiked>,
   ) {
     setInterval(async () => {
       this.invalidateCache();
@@ -348,6 +344,28 @@ export class UserService {
     }
   }
 
+  async hasUserLikedPartner(
+    userId: string,
+    partnerId: string,
+  ): Promise<boolean> {
+    // Получаем пользователя с userId и его лайками
+    const user = await this.userRepository.findOne({
+      where: { userId },
+      relations: ['likes'],
+    });
+
+    // Если пользователь не найден, возвращаем false
+    if (!user) return false;
+
+    // Проверяем, есть ли в лайках partnerId
+    const existingLike = user.likes.find(
+      (like) => like.likedUserId === partnerId,
+    );
+
+    // Возвращаем true, если лайк найден, иначе false
+    return !!existingLike;
+  }
+
   async getDislikes(userId: string): Promise<string[]> {
     const user = await this.userRepository.findOne({
       where: { userId },
@@ -416,7 +434,7 @@ export class UserService {
     return user?.name;
   }
 
-  async setName(userId: string, name: string) {
+  async setName(userId: string, name: string, username: string | null) {
     let user = await this.getUserFromCacheOrDB(userId);
 
     if (!user) {
@@ -424,6 +442,10 @@ export class UserService {
     }
 
     user.name = name;
+    user.username = username;
+    if (!user.age) {
+      user.showUsername = true;
+    }
 
     await this.userRepository.save(user);
     this.updateCache(user);
@@ -493,11 +515,33 @@ export class UserService {
     return user?.isVisibleToOthers;
   }
 
+  async getUsernameVisible(userId: string): Promise<boolean> {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    return user?.showUsername;
+  }
+
   async setProfileVisible(userId: string, isVisible: boolean) {
     const user = await this.getUserFromCacheOrDB(userId);
 
     if (user) {
       user.isVisibleToOthers = isVisible;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async setUsernameVisible(
+    userId: string,
+    isVisible: boolean,
+    username: string | null,
+  ) {
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (user) {
+      user.showUsername = isVisible;
+      user.username = username;
 
       await this.userRepository.save(user);
       this.updateCache(user);
@@ -547,19 +591,19 @@ export class UserService {
       .leftJoin(
         Like,
         'likedMe',
-        'likedMe.user_id = user.userId AND likedMe.likedUserId = :userId',
+        '(likedMe.user_id = user.userId AND likedMe.likedUserId = :userId)',
         { userId },
       )
       .leftJoin(
         Like,
         'iLiked',
-        'iLiked.likedUserId = user.userId AND iLiked.user_id = :userId',
+        '(iLiked.user_id = :userId AND iLiked.likedUserId = user.userId)',
         { userId },
       )
       .leftJoinAndSelect(
         Dislike,
         'dislike',
-        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
         { userId },
       )
       .where('user.userId != :userId')
@@ -568,6 +612,7 @@ export class UserService {
       .andWhere('dislike.id IS NULL')
       .andWhere('likedMe.id IS NOT NULL')
       .andWhere('iLiked.id IS NULL')
+      .orderBy('likedMe.id', 'DESC')
       .getOne();
 
     return user || null;
@@ -579,29 +624,31 @@ export class UserService {
   ): Promise<User | null> {
     const user = await this.userRepository
       .createQueryBuilder('user')
-      .innerJoin(
+      .leftJoin(
         Like,
         'likeOutgoing',
-        'likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId',
+        '(likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId)',
         { userId },
       )
-      .innerJoin(
+      .leftJoin(
         Like,
         'likeIncoming',
-        'likeIncoming.likedUserId = :userId AND likeIncoming.user_id = user.userId',
+        '(likeIncoming.user_id = user.userId AND likeIncoming.likedUserId = :userId)',
         { userId },
       )
-      .leftJoinAndSelect(
+      .leftJoin(
         Dislike,
         'dislike',
-        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
         { userId },
       )
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
       .andWhere('user.isVisibleToOthers = true')
       .andWhere('dislike.id IS NULL')
-      .orderBy('user.userId', 'ASC') // Указывает порядок сортировки
+      .andWhere('likeIncoming.id IS NOT NULL')
+      .andWhere('likeOutgoing.id IS NOT NULL')
+      .orderBy('user.id', 'DESC') // Указывает порядок сортировки
       .skip(offset)
       .take(1)
       .getOne();

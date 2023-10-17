@@ -68,11 +68,24 @@ export class ProfileMatchActionsService {
       });
 
     this.bot
+      .action(
+        /^remove_match\?partnerId=([^&]+)(?:&offset=([^&]+))?/,
+        async (ctx) =>
+          safeExecute(this.onRemoveMatch.bind(this), ctx, {
+            partnerId: ctx.match[1],
+            offset: +ctx.match[2],
+          }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('open_profile error: ', err, ctx);
+      });
+
+    this.bot
       .action('browsing_likes', async (ctx) =>
         safeExecute(this.onBrowsingLikes.bind(this), ctx),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('browsing_likes error: ', err, ctx);
       });
     this.bot
       .action(/browsing_matches\?offset=([^&]+)/, async (ctx) =>
@@ -81,37 +94,72 @@ export class ProfileMatchActionsService {
         }),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('browsing_matches error: ', err, ctx);
       });
 
     this.bot
-      .action(/dislike\?partnerId=([^&]+)/, async (ctx) =>
+      .action(
+        /^cancel_invite\?offset=([^&]+)&inviteId=([^&]+)&chatId=([^&]+)/,
+        async (ctx) =>
+          safeExecute(this.onCancelInvite.bind(this), ctx, {
+            offset: +ctx.match[1],
+            inviteId: ctx.match[2],
+            chatId: ctx.match[3],
+          }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('cancel_invite error: ', err, ctx);
+      });
+
+    this.bot
+      .action(/^dislike\?partnerId=([^&]+)/, async (ctx) =>
         safeExecute(this.dislike.bind(this), ctx, {
           partnerId: ctx.match[1],
         }),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('dislike error: ', err, ctx);
       });
 
     this.bot
-      .action(/like\?partnerId=([^&]+)/, async (ctx) =>
+      .action(/^like\?partnerId=([^&]+)/, async (ctx) =>
         safeExecute(this.like.bind(this), ctx, {
           partnerId: ctx.match[1],
         }),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('like error: ', err, ctx);
       });
 
     this.bot
-      .action(/start_chat\?partnerId=([^&]+)/, async (ctx) =>
-        safeExecute(this.onStartChat.bind(this), ctx, {
+      .action(/^outside_dislike\?partnerId=([^&]+)/, async (ctx) =>
+        safeExecute(this.outsideDislike.bind(this), ctx, {
           partnerId: ctx.match[1],
         }),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('dislike error: ', err, ctx);
+      });
+
+    this.bot
+      .action(/^outside_like\?partnerId=([^&]+)/, async (ctx) =>
+        safeExecute(this.outsideLike.bind(this), ctx, {
+          partnerId: ctx.match[1],
+        }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('like error: ', err, ctx);
+      });
+
+    this.bot
+      .action(/^start_chat\?partnerId=([^&]+)&messageId=([^&]+)/, async (ctx) =>
+        safeExecute(this.onStartChat.bind(this), ctx, {
+          partnerId: ctx.match[1],
+          messageId: ctx.match[2],
+        }),
+      )
+      .catch(async (err, ctx) => {
+        await this.handleBotEventError('start_chat error: ', err, ctx);
       });
 
     this.bot
@@ -121,7 +169,7 @@ export class ProfileMatchActionsService {
         }),
       )
       .catch(async (err, ctx) => {
-        await this.handleBotEventError('open_profile error: ', err, ctx);
+        await this.handleBotEventError('blocked error: ', err, ctx);
       });
   }
 
@@ -133,7 +181,7 @@ export class ProfileMatchActionsService {
       const userId = ctx?.from?.id.toString();
       if (userId) {
         try {
-          await this.userService.blockUser(userId);
+          // await this.userService.blockUser(userId);
         } catch (err) {
           console.error('user-actions error: ', err.message);
         }
@@ -213,7 +261,7 @@ export class ProfileMatchActionsService {
       const userId = this.getUserId(ctx);
       let user: User;
       const userState = await this.userService.getUserState(userId);
-      let captionText = 'Пока подходящих профилей нет, попробуй чуть позже';
+      let captionText = 'Пока подходящих анкет нет, попробуй чуть позже';
       let keyboard = [];
 
       if (userState === UserState.BROWSING_LIKES) {
@@ -232,7 +280,10 @@ export class ProfileMatchActionsService {
       }
 
       if (user) {
-        captionText = this.getCaptionText(user);
+        captionText = this.getCaptionText(
+          user,
+          userState === UserState.BROWSING_MATCHES && user.showUsername,
+        );
 
         if (userState === UserState.BROWSING_MATCHES) {
           keyboard = [
@@ -248,10 +299,23 @@ export class ProfileMatchActionsService {
             ],
             [
               Markup.button.callback(
-                'Перейти в чат',
-                `request_to_chat?partnerId=${user.userId}&offset=${offset}`,
+                'Убрать из мэтчей',
+                `remove_match?partnerId=${user.userId}&offset=${offset}`,
               ),
             ],
+            !user.currentPartner
+              ? [
+                  Markup.button.callback(
+                    'Позвать в чат',
+                    `request_to_chat?partnerId=${user.userId}&offset=${offset}`,
+                  ),
+                ]
+              : [
+                  Markup.button.callback(
+                    'Позвать в чат (пользователь занят)',
+                    `-`,
+                  ),
+                ],
             ...keyboard,
           ];
         } else {
@@ -316,6 +380,56 @@ export class ProfileMatchActionsService {
     try {
       await this.userService.addLike(userId, partnerId);
       await this.browsingProfile(ctx);
+      const user = await this.userService.getUserFromCacheOrDB(userId);
+      const hasPartnerLikedUser = await this.userService.hasUserLikedPartner(
+        partnerId,
+        userId,
+      );
+      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
+      const partnerKeyboard = hasPartnerLikedUser
+        ? [
+            !user.currentPartner
+              ? [
+                  Markup.button.callback(
+                    'Позвать в чат',
+                    `request_to_chat?partnerId=${user.userId}&offset=0`,
+                  ),
+                ]
+              : [
+                  Markup.button.callback(
+                    'Позвать в чат (пользователь занят)',
+                    `-`,
+                  ),
+                ],
+            [Markup.button.callback('Главное меню', 'main_menu')],
+          ]
+        : [
+            [
+              Markup.button.callback(
+                '👍',
+                `outside_like?partnerId=${user.userId}`,
+              ),
+              Markup.button.callback(
+                '👎',
+                `outside_dislike?partnerId=${user.userId}`,
+              ),
+            ],
+          ];
+      await ctx.telegram
+        .sendPhoto(partnerId, userImageUrlToSend, {
+          reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
+          parse_mode: 'HTML',
+          caption: `${
+            hasPartnerLikedUser ? 'У тебя мэтч с' : 'Ты понравился'
+          }\n${this.getCaptionText(user, user.showUsername)}`,
+        })
+        .catch(async (err) => {
+          await this.handleBotEventError(
+            'onEditProfile ctx error:  ',
+            err,
+            ctx,
+          );
+        });
     } catch (e) {
       console.error('like error: ', e.message);
     }
@@ -328,6 +442,93 @@ export class ProfileMatchActionsService {
       await this.userService.addDislike(userId, partnerId);
       await this.userService.addDislike(partnerId, userId);
       await this.browsingProfile(ctx);
+    } catch (e) {
+      console.error('dislike error: ', e.message);
+    }
+  }
+
+  async outsideLike(ctx, { partnerId }: { partnerId: string }) {
+    const userId = this.getUserId(ctx);
+    try {
+      await this.userService.addLike(userId, partnerId);
+      const user = await this.userService.getUserFromCacheOrDB(userId);
+      const partner = await this.userService.getUserFromCacheOrDB(partnerId);
+      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
+      const partnerImageUrlToSend =
+        partner?.photoUrl || this.placeholderImageUrl;
+      const partnerKeyboard = [
+        !user.currentPartner
+          ? [
+              Markup.button.callback(
+                'Позвать в чат',
+                `request_to_chat?partnerId=${user.userId}&offset=0`,
+              ),
+            ]
+          : [Markup.button.callback('Позвать в чат (пользователь занят)', `-`)],
+        [Markup.button.callback('Главное меню', 'main_menu')],
+      ];
+      const userKeyboard = [
+        !partner.currentPartner
+          ? [
+              Markup.button.callback(
+                'Позвать в чат',
+                `request_to_chat?partnerId=${partner.userId}&offset=0`,
+              ),
+            ]
+          : [Markup.button.callback('Позвать в чат (пользователь занят)', `-`)],
+        [Markup.button.callback('Главное меню', 'main_menu')],
+      ];
+
+      !user.currentPartner &&
+        (await ctx.telegram
+          .sendPhoto(userId, partnerImageUrlToSend, {
+            reply_markup: Markup.inlineKeyboard(userKeyboard).reply_markup,
+            parse_mode: 'HTML',
+            caption: `У тебя мэтч с \n${this.getCaptionText(
+              partner,
+              partner.showUsername,
+            )}`,
+          })
+          .catch(async (err) => {
+            await this.handleBotEventError(
+              'onEditProfile ctx error:  ',
+              err,
+              ctx,
+            );
+          }));
+      !partner.currentPartner &&
+        (await ctx.telegram
+          .sendPhoto(partnerId, userImageUrlToSend, {
+            reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
+            parse_mode: 'HTML',
+            caption: `У тебя мэтч с \n${this.getCaptionText(
+              user,
+              user.showUsername,
+            )}`,
+          })
+          .catch(async (err) => {
+            await this.handleBotEventError(
+              'onEditProfile ctx error:  ',
+              err,
+              ctx,
+            );
+          }));
+    } catch (e) {
+      console.error('like error: ', e.message);
+    }
+  }
+
+  async outsideDislike(ctx, { partnerId }: { partnerId: string }) {
+    const userId = this.getUserId(ctx);
+
+    try {
+      await this.userService.addDislike(userId, partnerId);
+      await this.userService.addDislike(partnerId, userId);
+      await ctx
+        .deleteMessage()
+        .catch((e) =>
+          console.error('user action delete message error: ', e.message),
+        );
     } catch (e) {
       console.error('dislike error: ', e.message);
     }
@@ -355,15 +556,110 @@ export class ProfileMatchActionsService {
     }
   }
 
+  async onCancelInvite(
+    ctx,
+    {
+      offset,
+      inviteId,
+      chatId,
+    }: { offset?: number; inviteId: string; chatId: string },
+  ) {
+    const userId = this.getUserId(ctx);
+    try {
+      const user = await this.userService.getUserFromCacheOrDB(userId);
+      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
+      const currentUserKeyboard = [
+        !user.currentPartner
+          ? [
+              Markup.button.callback(
+                'Позвать в чат',
+                `request_to_chat?partnerId=${user.userId}&offset=0`,
+              ),
+            ]
+          : [Markup.button.callback('Позвать в чат (пользователь занят)', `-`)],
+        [Markup.button.callback('Главное меню', 'main_menu')],
+      ];
+      const captionText = `Тебя звали, но не дождались \n${this.getCaptionText(
+        user,
+        true,
+      )}`;
+      const replyOptions = {
+        reply_markup: Markup.inlineKeyboard(currentUserKeyboard).reply_markup,
+        caption: captionText,
+      };
+      await ctx.telegram
+        .editMessageMedia(
+          chatId,
+          inviteId,
+          null,
+          {
+            type: 'photo',
+            media: userImageUrlToSend,
+            caption: captionText,
+            parse_mode: 'HTML',
+          },
+          replyOptions,
+        )
+        .catch((e) =>
+          console.error('onCancelInvite editMessageMedia error: ', e.message),
+        );
+
+      await this.onBrowsingMatches(ctx, { offset });
+    } catch (e) {
+      console.error('onCancelInvite error: ', e.message);
+    }
+  }
+
   async onRequestToChat(
     ctx,
     { partnerId, offset }: { partnerId?: string; offset?: number },
   ) {
     const userId = this.getUserId(ctx);
     try {
+      // Отправляем партнеру приглашение
+      const user = await this.userService.getUserFromCacheOrDB(userId);
+      const messageIdForDelete = ctx.update.callback_query.message.message_id;
+
+      const partnerKeyboard = [
+        [
+          Markup.button.callback(
+            'Перейти в чат',
+            `start_chat?partnerId=${userId}&messageId=${messageIdForDelete}`,
+          ),
+        ],
+        [
+          Markup.button.callback(
+            'Заблокировать',
+            `blocked?partnerId=${userId}`,
+          ),
+        ],
+      ];
+      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
+      const message = await ctx.telegram.sendPhoto(
+        partnerId,
+        userImageUrlToSend,
+        {
+          reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
+          parse_mode: 'HTML',
+          caption: `Тебя в чат пригласил\n${this.getCaptionText(
+            user,
+            user.showUsername,
+          )}`,
+        },
+      );
+
+      // Пользователю показываем ожидание
+      // Если отменяет, то мы изменяем сообщение, которое отправили партнеру
+      const messageId = message.message_id;
+      const chatId = message.chat.id;
       const partner = await this.userService.getUserFromCacheOrDB(partnerId);
       const currentUserKeyboard = [
-        [Markup.button.callback('Отмена', `browsing_matches?offset=${offset}`)],
+        [
+          Markup.button.callback(
+            'Отмена',
+            `cancel_invite?offset=${offset}&inviteId=${messageId}&chatId=${chatId}`,
+          ),
+        ],
       ];
       const captionText = 'Ожидаем пользователя';
       const replyOptions = {
@@ -388,56 +684,55 @@ export class ProfileMatchActionsService {
           replyOptions,
         )
         .catch((e) => console.error('editMessageMedia error: ', e.message));
-
-      const user = await this.userService.getUserFromCacheOrDB(userId);
-      const partnerKeyboard = [
-        [
-          Markup.button.callback(
-            'Перейти в чат',
-            `start_chat?partnerId=${userId}`,
-          ),
-        ],
-        [
-          Markup.button.callback(
-            'Заблокировать',
-            `blocked?partnerId=${userId}`,
-          ),
-        ],
-      ];
-      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
-      // Партнеру кидаем приглашение
-      return await ctx.telegram
-        .sendPhoto(partnerId, userImageUrlToSend, {
-          reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
-          caption: `Тебя в чат пригласил\n${this.getCaptionText(user)}`,
-        })
-        .catch(async (err) => {
-          await this.handleBotEventError(
-            'onEditProfile ctx error:  ',
-            err,
-            ctx,
-          );
-        });
     } catch (e) {
       console.error('onBrowsingLikes error: ', e.message);
     }
   }
 
-  async onStartChat(ctx, { partnerId }: { partnerId: string }) {
+  async onRemoveMatch(
+    ctx,
+    { partnerId, offset }: { partnerId?: string; offset?: number },
+  ) {
+    const userId = this.getUserId(ctx);
+    try {
+      await this.userService.addDislike(userId, partnerId);
+      await this.userService.addDislike(partnerId, userId);
+
+      await this.browsingProfile(ctx, offset !== 0 ? offset - 1 : 0);
+    } catch (e) {
+      console.error('onRemoveMatch error: ', e.message);
+    }
+  }
+
+  async onStartChat(
+    ctx,
+    { partnerId, messageId }: { partnerId: string; messageId: string },
+  ) {
     const userId = this.getUserId(ctx);
     try {
       await ctx
         .deleteMessage()
         .catch((e) =>
-          console.error('feelingAge deleteMessage error: ', e.message),
+          console.error('onStartChat deleteMessage error: ', e.message),
         );
+      if (messageId) {
+        await ctx.telegram
+          .deleteMessage(partnerId, messageId)
+          .catch((e) =>
+            console.error(
+              'onStartChat partner deleteMessage error: ',
+              e.message,
+            ),
+          );
+      }
       const room = randomStringGenerator();
-      await this.userService.setState(userId, UserState.QUICK_SEARCH);
-      await this.userService.setState(partnerId, UserState.QUICK_SEARCH);
+
       await this.userService.setActiveRoom(userId, room);
       await this.userService.setActiveRoom(partnerId, room);
       await this.userService.setCurrentPartner(userId, partnerId);
       await this.userService.setCurrentPartner(partnerId, userId);
+      await this.userService.setState(userId, UserState.IN_CHAT);
+      await this.userService.setState(partnerId, UserState.IN_CHAT);
       const partnerChatKeyboard = Markup.inlineKeyboard([
         Markup.button.callback('Завершить чат', 'end_chat'),
       ]);
@@ -490,9 +785,13 @@ export class ProfileMatchActionsService {
     return str.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
   }
 
-  getCaptionText(user): string {
-    return `${user.name}\n${user.age}\n${UserRoleMap[user.role]}\n${
-      user.description
+  getCaptionText(user, showUsername = false): string {
+    return `${
+      showUsername && user.username
+        ? `<a href="https://t.me/${user.username}">${user.name}</a>`
+        : user.name || ''
+    }\n${user.age || ''}\n${UserRoleMap[user.role] || ''}\n${
+      user.description || ''
     }`;
   }
 

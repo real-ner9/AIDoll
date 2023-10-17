@@ -42,7 +42,7 @@ export class ChatActionsService {
       const userId = ctx?.from?.id.toString();
       if (userId) {
         try {
-          await this.userService.blockUser(userId);
+          // await this.userService.blockUser(userId);
         } catch (err) {
           console.error('chat-actions error: ', err.message);
         }
@@ -75,10 +75,10 @@ export class ChatActionsService {
                 }
               })
               .catch(async (e) => {
-                if (!user.isBlocked) {
+                if (e.code === 403 && !user.isBlocked) {
                   blockedUsers.push(user.userId);
                 }
-                console.error('cron schedule catch test error ', e.message);
+                console.error('daily notification ', e.message);
               });
 
             if (i === activeUsers.length - 1) {
@@ -129,7 +129,11 @@ export class ChatActionsService {
         await this.handleBotEventError('change error: ', err, ctx);
       });
     this.bot
-      .hears('/end', (ctx) => safeExecute(this.feedBack.bind(this), ctx))
+      .hears('/end', (ctx) => {
+        return ctx.state?.userState === UserState.IN_CHAT
+          ? safeExecute(this.onEndChat.bind(this), ctx)
+          : safeExecute(this.feedBack.bind(this), ctx);
+      })
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end error: ', err, ctx);
       });
@@ -170,9 +174,11 @@ export class ChatActionsService {
         await this.handleBotEventError('change_partner: ', err, ctx);
       });
     this.bot
-      .action('end_chat', async (ctx) =>
-        safeExecute(this.feedBack.bind(this), ctx),
-      )
+      .action('end_chat', async (ctx) => {
+        return ctx.state?.userState === UserState.IN_CHAT
+          ? safeExecute(this.onEndChat.bind(this), ctx)
+          : safeExecute(this.feedBack.bind(this), ctx);
+      })
       .catch(async (err, ctx) => {
         await this.handleBotEventError('end_chat error: ', err, ctx);
       });
@@ -231,15 +237,15 @@ export class ChatActionsService {
   ) {
     try {
       const userId = ctx.from.id.toString();
+      await this.userService.addLike(userId, partnerId);
+      const isChangePartner = event === 'change_partner' || event === '/change';
+      await this.onEndChat(ctx, !isChangePartner);
+      isChangePartner && (await this.onFindPartner(ctx));
       await ctx
         .deleteMessage()
         .catch((e) =>
           console.error('onPositiveFeedback deleteMessage error: ', e.message),
         );
-      await this.userService.addLike(userId, partnerId);
-      const isChangePartner = event === 'change_partner' || event === '/change';
-      await this.onEndChat(ctx, !isChangePartner);
-      isChangePartner && (await this.onFindPartner(ctx));
     } catch (e) {
       console.error('onPositiveFeedback error', e.message);
     }
@@ -523,6 +529,8 @@ export class ChatActionsService {
 
     try {
       const partnerId = await this.userService.getCurrentPartner(userId);
+      await this.userService.setCurrentPartner(userId, null);
+      await this.userService.setActiveRoom(userId, null);
       if (partnerId) {
         await this.userService.setCurrentPartner(partnerId, null);
         await this.userService.addPastPartner(userId, partnerId);
@@ -548,15 +556,6 @@ export class ChatActionsService {
       console.error('onEndChat if partnerId error', e.message);
     }
 
-    try {
-      await this.userService.setCurrentPartner(userId, null);
-      await this.userService.setActiveRoom(userId, null);
-    } catch (e) {
-      console.error(
-        'onEndChat setCurrentPartner setActiveRoom error',
-        e.message,
-      );
-    }
     if (showKeyboard) {
       ctx
         .reply(
@@ -629,7 +628,7 @@ export class ChatActionsService {
             // код ошибки для "заблокированного пользователя"
             if (userId) {
               try {
-                await this.userService.blockUser(userId);
+                // await this.userService.blockUser(userId);
               } catch (err) {
                 console.error(err.message);
               }
