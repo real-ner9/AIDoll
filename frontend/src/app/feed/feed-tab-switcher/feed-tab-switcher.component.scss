@@ -11,7 +11,7 @@
       transform: translate(-50%, -50%);
       width: fit-content;
       position: fixed;
-      bottom: 70px;
+      bottom: 77px;
 
       &::before {
         content: '';
@@ -26,6 +26,7 @@
 
       .mat-mdc-tab.mat-mdc-tab {
         flex-grow: 0;
+        height: fit-content;
       }
 
       .mdc-tab-indicator {

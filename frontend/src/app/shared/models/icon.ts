@@ -7,4 +7,6 @@ export type Icon = 'settings'
   | 'link'
   | 'approve'
   | 'cancel'
+  | 'like'
+  | 'dislike'
   | null

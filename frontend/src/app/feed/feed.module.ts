@@ -8,6 +8,8 @@ import { ListItemComponent } from './list-item/list-item.component';
 import { FeedListComponent } from './feed-list/feed-list.component';
 import { LikeListComponent } from './like-list/like-list.component';
 import { MatTabsModule } from '@angular/material/tabs';
+import { SharedModule } from '../shared/shared.module';
+import { MatButtonModule } from '@angular/material/button';
 
 
 @NgModule({
@@ -21,7 +23,9 @@ import { MatTabsModule } from '@angular/material/tabs';
   imports: [
     CommonModule,
     FeedRoutingModule,
-    MatTabsModule
+    MatTabsModule,
+    SharedModule,
+    MatButtonModule
   ]
 })
 export class FeedModule { }
