@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { UserService } from './common/services/user.service';
+import { UserService } from './shared/services/user.service';
 
 @Component({
   selector: 'app-root',
@@ -40,13 +40,13 @@ export class AppComponent {
 
     this.updateTelegramData();
 
-    this.userService.authorize().subscribe(
-      response => console.log('response: ', response),
-      error => {
-        console.log(error);
-        this.error = error.error.reason
-      },
-    );
+    // this.userService.authorize().subscribe(
+    //   response => console.log('response: ', response),
+    //   error => {
+    //     console.log(error);
+    //     this.error = error.error.reason
+    //   },
+    // );
 
     this.webApp.expand();
   }

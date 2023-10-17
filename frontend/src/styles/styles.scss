@@ -1,0 +1,33 @@
+@import "palete";
+
+@font-face {
+  font-family: 'Golos UI';
+  font-style: normal;
+  font-weight: 400;
+  src: local(''),
+  url('../assets/golos-ui_regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+  url('../assets/golos-ui_regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+/* raleway-600 - latin_cyrillic */
+@font-face {
+  font-family: 'Golos UI';
+  font-style: normal;
+  font-weight: 500;
+  src: local(''),
+  url('../assets/golos-ui_medium.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+  url('../assets/golos-ui_medium.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+}
+
+html, body {
+  height: 100%;
+  background: #1D1D1D;
+  background: orange;
+}
+
+* {
+  box-sizing: border-box;
+  letter-spacing: -0.3px;
+}
+
+body { margin: 0; font-family: $font-family; }
