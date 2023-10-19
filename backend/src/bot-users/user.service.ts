@@ -711,4 +711,37 @@ export class UserService {
       await this.userRepository.save(connection.user);
     }
   }
+
+  async getMatches(userId: number | string) {
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin(
+        Like,
+        'likeOutgoing',
+        '(likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId)',
+        { userId },
+      )
+      .leftJoin(
+        Like,
+        'likeIncoming',
+        '(likeIncoming.user_id = user.userId AND likeIncoming.likedUserId = :userId)',
+        { userId },
+      )
+      .leftJoin(
+        Dislike,
+        'dislike',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .andWhere('likeIncoming.id IS NOT NULL')
+      .andWhere('likeOutgoing.id IS NOT NULL')
+      .orderBy('user.id', 'DESC')
+      .getMany();
+
+    return users.length ? { content: users } : { content: [] };
+  }
 }

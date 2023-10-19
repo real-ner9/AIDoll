@@ -2,6 +2,7 @@ import { UserRole } from './user-role';
 
 export interface User {
   activeRoom?: string;
+  id: number;
   currentPartner?: string;
   lastCleaned?: number;
   lastSearchTimestage?: number;
@@ -17,4 +18,5 @@ export interface User {
   name?: string;
   username?: string;
   showUsername?: boolean;
+  online?: boolean;
 }

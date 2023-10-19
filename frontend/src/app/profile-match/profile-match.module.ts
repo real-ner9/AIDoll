@@ -10,6 +10,10 @@ import { MatchListComponent } from './match-list/match-list.component';
 import { SharedModule } from '../shared/shared.module';
 import { ListItemComponent } from './list-item/list-item.component';
 import { MatButtonModule } from '@angular/material/button';
+import { matchesReducer } from './match-list/store/matches.reducer';
+import { StoreModule } from '@ngrx/store';
+import { EffectsModule } from '@ngrx/effects';
+import { MatchesEffects } from './match-list/store/matches.effects';
 
 
 @NgModule({
@@ -25,7 +29,9 @@ import { MatButtonModule } from '@angular/material/button';
     ProfileMatchRoutingModule,
     MatTabsModule,
     SharedModule,
-    MatButtonModule
+    MatButtonModule,
+    StoreModule.forFeature('matches', matchesReducer),
+    EffectsModule.forFeature([MatchesEffects])
   ]
 })
 export class ProfileMatchModule { }

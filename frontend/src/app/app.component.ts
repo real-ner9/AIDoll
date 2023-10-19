@@ -1,13 +1,14 @@
-import { Component, HostListener, OnDestroy } from '@angular/core';
+import { Component } from '@angular/core';
 import { UserService } from './shared/services/user.service';
 import { SocketService } from './shared/services/user-socket.service';
+import { take } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnDestroy {
+export class AppComponent {
   title = 'frontend';
   webApp = window.Telegram.WebApp;
   user: any = {};
@@ -18,37 +19,17 @@ export class AppComponent implements OnDestroy {
     private readonly socketUserService: SocketService,
   ) {
     const params = new URLSearchParams(window.location.hash.slice(1));
-
-    console.log(this.webApp);
-
-    this.webApp.sendData('dsadsa');
-    //
-    // // Convert it to more user-friendly object.
-    const initDataString = params.get('tgWebAppData'); // user=...&query_id=...&...
-    // console.log('initDataString', initDataString);
+    const initDataString = params.get('tgWebAppData');
     const initData = new URLSearchParams(initDataString as any);
-    // console.log('query_id', initData.get('query_id')); // jsHS198czozxk7s
-    // console.log('user', JSON.parse(initData.get('user') as any)); // jsHS198czozxk7s
     const user = initData.get('user') || localStorage.getItem('user');
 
     if (user) {
       this.user = JSON.parse(user);
     }
-    // console.log('auth_date', initData.get('auth_date')); // jsHS198czozxk7s
-    // console.log('hash', initData.get('hash')); // jsHS198czozxk7s
-    //
-    //
-    //
-    // this.userService.authorize(initDataString as any).subscribe(
-    //   response => console.log('response: ', response),
-    //   error => console.error('error', error)
-    // );
-
-    console.log('localstore', localStorage.getItem('logout'))
 
     this.updateTelegramData();
 
-    this.userService.authorize().subscribe(
+    this.userService.authorize().pipe(take(1)).subscribe(
       response => console.log('response: ', response),
       error => {
         console.log(error);
@@ -74,17 +55,5 @@ export class AppComponent implements OnDestroy {
         }
       }
     }
-  }
-
-  @HostListener('window:beforeunload', ['$event'])
-  unloadNotification($event: any): void {
-    localStorage.setItem('logout', 'true');
-    // const url = 'your-server-endpoint';
-    // const data = {}; // ваш данные
-    // navigator.sendBeacon(url, JSON.stringify(data));
-  }
-
-  ngOnDestroy() {
-    console.log('destroy');
   }
 }

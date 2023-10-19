@@ -1,10 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { MatchesFacade } from './store/matches.facade';
 
 @Component({
   selector: 'app-match-list',
   templateUrl: './match-list.component.html',
   styleUrls: ['./match-list.component.scss']
 })
-export class MatchListComponent {
+export class MatchListComponent implements OnInit {
+  matches$ = this.matchesFacade.matches$;
+  loading$ = this.matchesFacade.loading$;
+  error$ = this.matchesFacade.error$;
 
+  constructor(private matchesFacade: MatchesFacade) {}
+
+  ngOnInit() {
+    this.matchesFacade.loadMatches();
+  }
+
+  onMatchRemoved(matchId: number) {
+    this.matchesFacade.removeMatch(matchId);
+  }
 }

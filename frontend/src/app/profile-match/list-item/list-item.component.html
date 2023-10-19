@@ -1,17 +1,22 @@
-<div class="item">
+<div class="item" *ngIf="value">
   <div class="name-container">
-    <span class="name">Okulus </span>
-    <a href="https://t.me/leemiant" target="_blank" class="tg-link">@OkulusPampilus</a>
+    <span class="name">{{ value.name }}</span>
+    <a
+      *ngIf="value.username && value.showUsername"
+      [href]="'https://t.me/' + value.username"
+      target="_blank" class="tg-link">
+      @{{ value.username }}
+    </a>
   </div>
   <div class="statuses">
-    <span class="online">В сети </span>
-    <span class="hint"> • можно принять приглашение в чат</span>
+    <span class="online" *ngIf="value.online">В сети </span>
+    <span class="hint" *ngIf="page === 'requests'">{{ value.online ? ' • м' : 'М' }}ожно принять приглашение в чат</span>
   </div>
-  <div class="content">
-    Тусуюсь, делаю проекты в сфере культуры, ищу человека, которому будет не страшно поехать в национальный парк или заповедную территорию с палатками
+  <div class="content" *ngIf="value.description">
+    {{ value.description }}
   </div>
-  <div class="image">
-    <img src="https://static.mvd.ru/upload/site7/document_images/BEVnsnREKp-800x600.jpg" alt="Бомж">
+  <div class="image" *ngIf="value.photoUrl">
+<!--    <img src="https://static.mvd.ru/upload/site7/document_images/BEVnsnREKp-800x600.jpg" alt="Бомж">-->
   </div>
   <div class="actions" *ngIf="page === 'requests'">
     <button mat-raised-button (click)="handleCancel()" class="icon-button">
@@ -27,10 +32,10 @@
         Пригласить в чат
       </button>
     </div>
-    <div class="actions">
-      <button mat-raised-button (click)="handleCancelRequest()" class="text-button danger">
-        Отменить приглашение
-      </button>
-    </div>
+<!--    <div class="actions">-->
+<!--      <button mat-raised-button (click)="handleCancelRequest()" class="text-button danger">-->
+<!--        Отменить приглашение-->
+<!--      </button>-->
+<!--    </div>-->
   </ng-container>
 </div>

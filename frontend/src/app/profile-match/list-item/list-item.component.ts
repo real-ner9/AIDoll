@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { User } from '../../shared/models/user';
 
 @Component({
   selector: 'app-list-item',
@@ -7,6 +8,8 @@ import { Component, Input } from '@angular/core';
 })
 export class ListItemComponent {
   @Input() page: 'requests' | 'matches' = 'requests';
+  @Input() value?: User;
+
   handleCancel() {
     console.log('handleCancel');
   }
