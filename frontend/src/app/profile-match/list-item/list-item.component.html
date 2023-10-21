@@ -16,7 +16,7 @@
     {{ value.description }}
   </div>
   <div class="image" *ngIf="value.photoUrl">
-<!--    <img src="https://static.mvd.ru/upload/site7/document_images/BEVnsnREKp-800x600.jpg" alt="Бомж">-->
+    <img src="{{ 'image_2021-03-14_23-22-02.png' | photoUrl }}" alt="Фотография с {{ value.name }}">
   </div>
   <div class="actions" *ngIf="page === 'requests'">
     <button mat-raised-button (click)="handleCancel()" class="icon-button">
