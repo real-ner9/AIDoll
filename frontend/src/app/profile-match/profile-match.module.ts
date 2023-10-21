@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 
 import { ProfileMatchRoutingModule } from './profile-match-routing.module';
 import { ProfileMatchComponent } from './profile-match/profile-match.component';
@@ -36,6 +36,7 @@ import { RequestsEffects } from './request-list/store/requests.effects';
     EffectsModule.forFeature([MatchesEffects]),
     StoreModule.forFeature('requests', requestsReducer),
     EffectsModule.forFeature([RequestsEffects]),
+    NgOptimizedImage,
   ]
 })
 export class ProfileMatchModule { }

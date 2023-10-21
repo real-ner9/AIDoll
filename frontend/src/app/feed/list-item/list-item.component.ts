@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { User } from '../../shared/models/user';
 
 @Component({
   selector: 'app-feed-list-item',
@@ -7,6 +8,7 @@ import { Component, Input } from '@angular/core';
 })
 export class ListItemComponent {
   @Input() page: 'feed' | 'likes' = 'feed';
+  @Input() value?: User;
   handleDislike() {
     console.log('handleCancel');
   }

@@ -1,24 +1,15 @@
-<div class="item">
-  <div class="name-container">
-    <span class="name">Okulus </span>
+<div class="item" *ngIf="value">
+  <div class="name-container" *ngIf="value.name">
+    <span class="name">{{ value.name }}</span>
   </div>
-  <div class="statuses">
-    <span class="online">В сети </span>
-    <span class="hint"> • можно принять приглашение в чат</span>
+  <div class="statuses" *ngIf="value.online">
+    <span class="online" *ngIf="value.online">В сети</span>
   </div>
-  <div class="content">
-    Для друзей Гелендваген 😁
-    Ростом не вышел,158 см чистой ярости😂
-    Смотрю фильмы, сериалы, мультики, аниме (особенно люблю ужастики)
-    Немножко рисую 👉👈
-    Ещё люблю котиков и пиво 🍺
-    Вообще хотелось бы стать тату мастером, так что теперь начну копить на курсы)
-    Из музыки слушаю всё, любимых групп нет, да и песен тоже.
-    Если кому надо зз рыбы)
-    P. C есть парень
+  <div class="content" *ngIf="value.description">
+    {{ value.description }}
   </div>
-  <div class="image">
-    <img src="https://sun1-23.userapi.com/s/v1/ig2/NMHYjSE0cnzmiG10uYEB9zUmlqBIRar9Qtg0Ege9pNVKRPJJcnCAzEq3mQNo1QSKz6zhQqneoYcTjHQ0VLa5ErrP.jpg?size=400x400&quality=95&crop=41,151,452,452&ava=1" alt="Артем">
+  <div class="image" *ngIf="value.photoUrl">
+    <img src="{{ 'image_2021-03-14_23-22-02.png' | photoUrl }}" alt="Фотография с {{ value.name }}">
   </div>
   <div class="actions">
     <button mat-raised-button (click)="handleDislike()" class="icon-button">

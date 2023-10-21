@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Actions, ofType, createEffect } from '@ngrx/effects';
 import { catchError, map, mergeMap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { debounceTime, of } from 'rxjs';
 
 import * as matchesActions from './matches.actions';
 import { UserService } from '../../../shared/services/user.service';
@@ -10,6 +10,7 @@ import { UserService } from '../../../shared/services/user.service';
 export class MatchesEffects {
   loadMatches$ = createEffect(() => this.actions$.pipe(
     ofType(matchesActions.loadMatches),
+    debounceTime(200),
     mergeMap(() => this.userService.getMatches()
       .pipe(
         map(matches => {

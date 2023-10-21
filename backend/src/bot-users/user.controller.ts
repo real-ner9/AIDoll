@@ -3,6 +3,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Query,
   Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -41,6 +42,21 @@ export class UserController {
     const { id } = this.getUser(authString);
     try {
       return await this.userService.getRequests(id);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Get('feed')
+  async getFeed(
+    @Req() req: Request,
+    @Query('pageSize') pageSize: number = 10,
+    @Query('pageNumber') pageNumber: number = 1,
+  ) {
+    const authString = req.headers['authorization'];
+    const { id } = this.getUser(authString);
+    try {
+      return await this.userService.getFeed(id, pageSize, pageNumber);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

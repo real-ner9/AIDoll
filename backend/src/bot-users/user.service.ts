@@ -8,7 +8,7 @@ import { Like } from './schemas/like.entity';
 import { Dislike } from './schemas/dislike.entity';
 import { Connection } from './schemas/connection.entity';
 import { ChatRequest } from './schemas/chat-request.entity';
-import { paginate } from '../utils/paginate';
+import { Page, paginate } from '../utils/paginate';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -805,6 +805,50 @@ export class UserService {
       totalElements: total,
       pageSize: 1,
       pageNumber: 1,
+    });
+  }
+
+  async getFeed(
+    userId: string | number,
+    pageSize: number,
+    pageNumber: number,
+  ): Promise<Page<User>> {
+    userId = `${userId}`;
+    const baseQuery = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoin(
+        Like,
+        'like',
+        'like.user_id = :userId AND like.likedUserId = user.userId',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Dislike,
+        'dislike',
+        'dislike.user_id = :userId AND dislike.dislikedUserId = user.userId',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .andWhere('like.id IS NULL');
+
+    // Получение пользователей с учетом пагинации
+    const users = await baseQuery
+      .skip((pageNumber - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    // Получение общего количества пользователей, соответствующих вашему запросу
+    const total = await baseQuery.getCount();
+
+    // Возвращение пользователей вместе с пагинационной информацией
+    return paginate<User>({
+      list: users,
+      totalElements: total,
+      pageSize,
+      pageNumber,
     });
   }
 }
