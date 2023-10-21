@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Page } from '../models/page';
+import { Match } from '../models/match';
 import { User } from '../models/user';
 
 @Injectable({
@@ -20,7 +21,14 @@ export class UserService {
   }
 
   getMatches() {
-    return this.http.get<Page<User>>(`${this.path}/matches`, {
+    return this.http.get<Page<Match>>(`${this.path}/matches`, {
+      observe: 'body',
+      responseType: 'json',
+    });
+  }
+
+  getRequests() {
+    return this.http.get<Page<User>>(`${this.path}/requests`, {
       observe: 'body',
       responseType: 'json',
     });

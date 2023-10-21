@@ -6,6 +6,7 @@ import { Dislike } from './dislike.entity';
 import { UserLiked } from './user-liked.entity';
 import { Match } from './match.entity';
 import { Connection } from './connection.entity';
+import { ChatRequest } from './chat-request.entity';
 
 @Entity()
 export class User {
@@ -86,6 +87,20 @@ export class User {
 
   @Column({ default: false })
   online: boolean;
+
+  /**
+   * Отношение к таблице ChatRequest, где текущий пользователь является отправителем запроса на чат.
+   * Это позволяет получить все запросы на чат, отправленные этим пользователем.
+   */
+  @OneToMany(() => ChatRequest, (chatRequest) => chatRequest.sender)
+  sentRequests: ChatRequest[];
+
+  /**
+   * Отношение к таблице ChatRequest, где текущий пользователь является получателем запроса на чат.
+   * Это позволяет получить все запросы на чат, которые были отправлены этому пользователю.
+   */
+  @OneToMany(() => ChatRequest, (chatRequest) => chatRequest.receiver)
+  receivedRequests: ChatRequest[];
 
   constructor(userId: string) {
     this.userId = userId;

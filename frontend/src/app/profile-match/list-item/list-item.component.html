@@ -27,15 +27,19 @@
     </button>
   </div>
   <ng-container *ngIf="page === 'matches'">
-    <div class="actions">
-      <button mat-raised-button (click)="handleRequest()" class="text-button primary">
-        Пригласить в чат
-      </button>
-    </div>
-<!--    <div class="actions">-->
-<!--      <button mat-raised-button (click)="handleCancelRequest()" class="text-button danger">-->
-<!--        Отменить приглашение-->
-<!--      </button>-->
-<!--    </div>-->
+    <ng-container *ngIf="value.chatRequested; else requestChatButton">
+      <div class="actions">
+        <button mat-raised-button (click)="handleCancelRequest()" class="text-button danger">
+          Отменить приглашение
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #requestChatButton>
+      <div class="actions">
+        <button mat-raised-button (click)="handleRequest()" class="text-button primary">
+          Пригласить в чат
+        </button>
+      </div>
+    </ng-template>
   </ng-container>
 </div>

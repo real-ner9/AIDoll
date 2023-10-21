@@ -7,6 +7,7 @@ import { UserRole } from './types/user-role';
 import { Like } from './schemas/like.entity';
 import { Dislike } from './schemas/dislike.entity';
 import { Connection } from './schemas/connection.entity';
+import { ChatRequest } from './schemas/chat-request.entity';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -27,6 +28,8 @@ export class UserService {
     private readonly dislikeRepository: Repository<Dislike>,
     @InjectRepository(Connection)
     private readonly connectionRepository: Repository<Connection>,
+    @InjectRepository(ChatRequest)
+    private readonly chatRequestRepository: Repository<ChatRequest>,
   ) {
     setInterval(async () => {
       this.invalidateCache();
@@ -713,8 +716,12 @@ export class UserService {
   }
 
   async getMatches(userId: number | string) {
+    userId = `${userId}`;
     const users = await this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.receivedRequests', 'receivedRequest')
+      .leftJoinAndSelect('receivedRequest.sender', 'sender')
+      .leftJoinAndSelect('receivedRequest.receiver', 'receiver')
       .leftJoin(
         Like,
         'likeOutgoing',
@@ -733,13 +740,46 @@ export class UserService {
         '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
         { userId },
       )
+      .leftJoin(
+        ChatRequest,
+        'sentRequest',
+        'sentRequest.sender_id = user.userId AND sentRequest.receiver_id = :userId',
+        { userId },
+      )
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
       .andWhere('user.isVisibleToOthers = true')
       .andWhere('dislike.id IS NULL')
       .andWhere('likeIncoming.id IS NOT NULL')
       .andWhere('likeOutgoing.id IS NOT NULL')
+      .andWhere('sentRequest.id IS NULL') // исключаем пользователей, которые отправили запрос
       .orderBy('user.id', 'DESC')
+      .getMany();
+
+    // Добавляем поле, показывающее, был ли отправлен запрос на чат
+    const enhancedUsers = users.map(({ receivedRequests, ...user }) => ({
+      ...user,
+      chatRequested: !!(
+        receivedRequests &&
+        receivedRequests?.length &&
+        receivedRequests.find(({ sender }) => sender.userId === userId)
+      ),
+    }));
+
+    return enhancedUsers.length ? { content: enhancedUsers } : { content: [] };
+  }
+
+  async getRequests(userId: number | string) {
+    userId = `${userId}`;
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoinAndSelect(
+        'user.sentRequests',
+        'chatRequest',
+        'chatRequest.sender_id = user.userId',
+      )
+      .where('chatRequest.receiver_id = :userId', { userId })
+      .orderBy('chatRequest.requestedAt', 'DESC')
       .getMany();
 
     return users.length ? { content: users } : { content: [] };

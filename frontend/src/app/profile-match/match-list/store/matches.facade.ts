@@ -3,11 +3,11 @@ import { Store, select } from '@ngrx/store';
 import * as MatchesSelectors from './matches.selectors';
 import * as MatchesActions from './matches.actions';
 import { Observable } from 'rxjs';
-import { User } from '../../../shared/models/user';
+import { Match } from '../../../shared/models/match';
 
 @Injectable({ providedIn: 'root' })
 export class MatchesFacade {
-  matches$: Observable<User[]> = this.store.select(MatchesSelectors.selectAllMatches);
+  matches$: Observable<Match[]> = this.store.select(MatchesSelectors.selectAllMatches);
   loading$: Observable<boolean> = this.store.pipe(select(MatchesSelectors.selectLoading));
   error$: Observable<any> = this.store.pipe(select(MatchesSelectors.selectError));
 
@@ -17,7 +17,7 @@ export class MatchesFacade {
 
   constructor(private store: Store) {}
 
-  addMatch(match: User) {
+  addMatch(match: Match) {
     this.store.dispatch(MatchesActions.addMatch({ match }));
   }
 

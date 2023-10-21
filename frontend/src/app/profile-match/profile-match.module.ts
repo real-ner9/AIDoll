@@ -14,6 +14,8 @@ import { matchesReducer } from './match-list/store/matches.reducer';
 import { StoreModule } from '@ngrx/store';
 import { EffectsModule } from '@ngrx/effects';
 import { MatchesEffects } from './match-list/store/matches.effects';
+import { requestsReducer } from './request-list/store/requests.reducer';
+import { RequestsEffects } from './request-list/store/requests.effects';
 
 
 @NgModule({
@@ -31,7 +33,9 @@ import { MatchesEffects } from './match-list/store/matches.effects';
     SharedModule,
     MatButtonModule,
     StoreModule.forFeature('matches', matchesReducer),
-    EffectsModule.forFeature([MatchesEffects])
+    EffectsModule.forFeature([MatchesEffects]),
+    StoreModule.forFeature('requests', requestsReducer),
+    EffectsModule.forFeature([RequestsEffects]),
   ]
 })
 export class ProfileMatchModule { }

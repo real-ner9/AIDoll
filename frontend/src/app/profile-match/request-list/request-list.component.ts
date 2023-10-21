@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { RequestsFacade } from './store/requests.facade';
 
 @Component({
   selector: 'app-request-list',
@@ -6,5 +7,17 @@ import { Component } from '@angular/core';
   styleUrls: ['./request-list.component.scss']
 })
 export class RequestListComponent {
+  requests$ = this.requestsFacade.requests$;
+  loading$ = this.requestsFacade.loading$;
+  error$ = this.requestsFacade.error$;
 
+  constructor(private requestsFacade: RequestsFacade) {}
+
+  ngOnInit() {
+    this.requestsFacade.loadRequests();
+  }
+
+  onRequestRemoved(requestId: number) {
+    this.requestsFacade.removeRequest(requestId);
+  }
 }

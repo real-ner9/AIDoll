@@ -1,5 +1,8 @@
 import { Component, Input } from '@angular/core';
+import { Match } from '../../shared/models/match';
 import { User } from '../../shared/models/user';
+
+type EnhancedUser = User & { chatRequested?: boolean };
 
 @Component({
   selector: 'app-list-item',
@@ -8,7 +11,7 @@ import { User } from '../../shared/models/user';
 })
 export class ListItemComponent {
   @Input() page: 'requests' | 'matches' = 'requests';
-  @Input() value?: User;
+  @Input() value?: EnhancedUser;
 
   handleCancel() {
     console.log('handleCancel');

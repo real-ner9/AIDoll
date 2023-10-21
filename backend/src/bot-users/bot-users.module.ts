@@ -10,6 +10,7 @@ import { Match } from './schemas/match.entity';
 import { UserController } from './user.controller';
 import { UsersWebSocketGateway } from './user-websocket-gateway';
 import { Connection } from './schemas/connection.entity';
+import { ChatRequest } from './schemas/chat-request.entity';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { Connection } from './schemas/connection.entity';
       UserLiked,
       Match,
       Connection,
+      ChatRequest,
     ]),
   ],
   providers: [
@@ -47,6 +49,10 @@ import { Connection } from './schemas/connection.entity';
     {
       provide: 'CONNECTION_REPOSITORY',
       useValue: Connection,
+    },
+    {
+      provide: 'CHAT_REQUEST_REPOSITORY',
+      useValue: ChatRequest,
     },
     UserActionsService,
     UsersWebSocketGateway,

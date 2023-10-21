@@ -6,10 +6,10 @@ import {
   addMatch,
   removeMatch
 } from './matches.actions';
-import { User } from '../../../shared/models/user';
+import { Match } from '../../../shared/models/match';
 
 export interface MatchesState {
-  matches: User[];
+  matches: Match[];
   loading: boolean;
   error: any;
 }
