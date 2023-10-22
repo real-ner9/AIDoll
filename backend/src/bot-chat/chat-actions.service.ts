@@ -6,6 +6,7 @@ import { RoomsService } from './room.service';
 import { UserService } from '../bot-users/user.service';
 import * as cron from 'node-cron';
 import { UserState } from '../bot-users/types/user-state';
+import * as process from 'process';
 
 async function safeExecute(fn: Function, ctx, ...args: any[]) {
   try {
@@ -391,7 +392,7 @@ export class ChatActionsService {
       [
         Markup.button.webApp(
           '📄 Смотреть анкеты',
-          'https://1c3a-104-232-36-147.ngrok-free.app/feed',
+          `${process.env.WEB_APP_URL}/feed`,
         ),
       ],
       [Markup.button.callback('✏️ Редактировать профиль', 'edit_profile')],

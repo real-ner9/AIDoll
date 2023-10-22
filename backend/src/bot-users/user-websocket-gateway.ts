@@ -9,6 +9,8 @@ import { Server, Socket } from 'socket.io';
 import { TgUser } from './types/tg-user';
 import { checkSignature } from '../utils/check-signature';
 import { UserService } from './user.service';
+import { ProfileMatchActionsService } from '../profile-match/profile-match-actions.service';
+import { forwardRef, Inject } from '@nestjs/common';
 
 @WebSocketGateway({
   namespace: '/user',
@@ -20,7 +22,11 @@ export class UsersWebSocketGateway
 {
   @WebSocketServer() server: Server;
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    @Inject(forwardRef(() => ProfileMatchActionsService))
+    private readonly profileMatchActionsService: ProfileMatchActionsService,
+  ) {}
 
   async handleConnection(socket: Socket) {
     const authData = socket.handshake.query.authData as string;
@@ -62,13 +68,16 @@ export class UsersWebSocketGateway
   async handleRequestMatch(client: Socket, data: { id: number }): Promise<any> {
     try {
       // Assume userService has a method to handle match requests
-      const { connections, user } = await this.userService.requestMatch(
+      const { user, partner } = await this.userService.requestMatch(
         client.id,
         data.id,
       );
       client.emit('requestMatchResponse', { success: true });
 
-      connections.forEach((connection) => {
+      await this.profileMatchActionsService.onRequestToChat(user, {
+        partnerId: partner.userId,
+      });
+      partner.connections?.forEach((connection) => {
         try {
           this.server
             .to(connection.connectId)

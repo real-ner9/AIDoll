@@ -907,7 +907,7 @@ export class UserService {
   async requestMatch(
     socketId: string,
     partnerId: number,
-  ): Promise<{ user: User; connections: Connection[] }> {
+  ): Promise<{ user: User; partner: User }> {
     const connection = await this.connectionRepository.findOne({
       where: { connectId: socketId },
       relations: ['user'],
@@ -932,7 +932,7 @@ export class UserService {
       const newChatRequest = new ChatRequest(user, partner);
       await this.chatRequestRepository.save(newChatRequest);
 
-      return { user, connections: partner.connections };
+      return { user, partner: partner };
     }
   }
 

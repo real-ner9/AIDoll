@@ -13,12 +13,8 @@ import { TgUser } from './types/tg-user';
 export class UserController {
   constructor(private readonly userService: UserService) {}
   @Get('authorize')
-  async authorize(@Req() req: Request) {
+  async authorize() {
     try {
-      const authString = req.headers['authorization'];
-      const user = this.getUser(authString);
-
-      console.log(user);
       return JSON.stringify({ status: 'COMPLETE' });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);

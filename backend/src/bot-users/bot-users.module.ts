@@ -11,6 +11,7 @@ import { UserController } from './user.controller';
 import { UsersWebSocketGateway } from './user-websocket-gateway';
 import { Connection } from './schemas/connection.entity';
 import { ChatRequest } from './schemas/chat-request.entity';
+import { ProfileMatchModule } from '../profile-match/profile-match.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ChatRequest } from './schemas/chat-request.entity';
       Connection,
       ChatRequest,
     ]),
+    ProfileMatchModule,
   ],
   providers: [
     UserService,
