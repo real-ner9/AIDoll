@@ -2,7 +2,7 @@
 # Этап сборки
 FROM node:18 as angular_build
 WORKDIR /app
-COPY ./frontend /app
+COPY .. /app
 RUN npm ci
 RUN npm run build -- --output-path=./dist/frontend
 
