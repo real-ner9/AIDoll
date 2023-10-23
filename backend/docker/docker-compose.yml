@@ -42,8 +42,6 @@ services:
     container_name: go_to_virt_frontend
     networks:
       - go_to_virt
-    ports:
-      - "8080:80"
 
 
   nginx:
