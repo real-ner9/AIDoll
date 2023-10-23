@@ -24,4 +24,12 @@ export class RequestsFacade {
   removeRequest(requestId: number) {
     this.store.dispatch(RequestsActions.cancelRequest({ requestId }));
   }
+
+  approveRequest(requestId: number) {
+    this.store.dispatch(RequestsActions.approveRequest({requestId}));
+  }
+
+  cancelRequest(requestId: number) {
+    this.store.dispatch(RequestsActions.cancelRequest({requestId}));
+  }
 }

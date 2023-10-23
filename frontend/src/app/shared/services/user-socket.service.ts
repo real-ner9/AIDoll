@@ -14,6 +14,7 @@ export class SocketService {
 
   constructor() {
     const authData = localStorage.getItem('authData');
+
     this.socket = io(`${environment.socketUrl}/${this.path}`, { query: { authData }});
   }
 
@@ -49,6 +50,32 @@ export class SocketService {
     });
   }
 
+  sendApproveRequest(id: number): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.emit('approveRequest', { id }, (response: any) => {
+        if (response.error) {
+          observer.error(response.error);
+        } else {
+          observer.next(response);
+          observer.complete();
+        }
+      });
+    });
+  }
+
+  sendCancelRequest(id: number): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.emit('cancelRequest', { id }, (response: any) => {
+        if (response.error) {
+          observer.error(response.error);
+        } else {
+          observer.next(response);
+          observer.complete();
+        }
+      });
+    });
+  }
+
   public onMatchRequest(): Observable<any> {
     return new Observable<any>(observer => {
       this.socket.on('matchRequest', ({ user }: { user: User }) => observer.next(user));
@@ -58,6 +85,30 @@ export class SocketService {
   public onMatchRequestCanceled(): Observable<any> {
     return new Observable<any>(observer => {
       this.socket.on('matchRequestCanceled', ({ user }: { user: User }) => observer.next(user));
+    });
+  }
+
+  public onRequestApproved(): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.on('requestApproved', ({ user }: { user: User }) => observer.next(user));
+    });
+  }
+
+  public onRequestCanceled(): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.on('requestCanceled', ({ user }: { user: User }) => observer.next(user));
+    });
+  }
+
+  public onApproveRequestResponse(): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.on('approveRequestResponse', (response: any) => {
+        if (response.error) {
+          observer.error(response.error);
+        } else {
+          observer.next(response);
+        }
+      });
     });
   }
 }

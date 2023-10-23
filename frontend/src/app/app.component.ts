@@ -38,6 +38,15 @@ export class AppComponent {
     );
 
     this.webApp.expand();
+
+    // Если пользователи согласились чатиться, то закрываем приложение
+    this.socketUserService.onApproveRequestResponse().subscribe(() => {
+      this.webApp.close();
+    });
+
+    this.socketUserService.onRequestApproved().subscribe(() => {
+      this.webApp.close();
+    });
   }
 
   updateTelegramData() {

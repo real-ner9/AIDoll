@@ -9,6 +9,7 @@ import { Dislike } from './schemas/dislike.entity';
 import { Connection } from './schemas/connection.entity';
 import { ChatRequest } from './schemas/chat-request.entity';
 import { Page, paginate } from '../utils/paginate';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -939,7 +940,7 @@ export class UserService {
   async cancelRequestMatch(
     socketId: string,
     partnerId: number,
-  ): Promise<{ user: User; connections: Connection[] }> {
+  ): Promise<{ user: User; partner: User }> {
     // Находим соединение по socketId
     const connection = await this.connectionRepository.findOne({
       where: { connectId: socketId },
@@ -967,7 +968,54 @@ export class UserService {
       // Если существующий запрос на чат найден, удаляем его
       await this.chatRequestRepository.remove(existingChatRequest);
 
-      return { user, connections: partner.connections };
+      return { user, partner };
+    }
+  }
+
+  async cancelRequest(
+    socketId: string,
+    partnerId: number,
+    approved: boolean = false,
+  ): Promise<{ user: User; partner: User, hasPartners: boolean }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    // Проверяем наличие существующего запроса на чат между этими двумя пользователями
+    const existingChatRequest = await this.chatRequestRepository.findOne({
+      where: {
+        sender: { id: partner.id },
+        receiver: { id: user.id },
+      },
+    });
+    if (existingChatRequest) {
+      // Если существующий запрос на чат найден, удаляем его
+      await this.chatRequestRepository.remove(existingChatRequest);
+      const hasPartners = !!(partner.currentPartner || user.currentPartner);
+      if (approved && !hasPartners) {
+        const room = randomStringGenerator();
+
+        await this.setActiveRoom(user.userId, room);
+        await this.setActiveRoom(partner.userId, room);
+        await this.setCurrentPartner(user.userId, partner.userId);
+        await this.setCurrentPartner(partner.userId, user.userId);
+        await this.setState(user.userId, UserState.IN_CHAT);
+        await this.setState(partner.userId, UserState.IN_CHAT);
+      }
+
+      return { user, partner, hasPartners };
     }
   }
 }

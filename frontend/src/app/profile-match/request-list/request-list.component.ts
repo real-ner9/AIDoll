@@ -20,4 +20,12 @@ export class RequestListComponent {
   onRequestRemoved(requestId: number) {
     this.requestsFacade.removeRequest(requestId);
   }
+
+  onApprove(id: number) {
+    this.requestsFacade.approveRequest(id);
+  }
+
+  onCancel(id: number) {
+    this.requestsFacade.cancelRequest(id);
+  }
 }

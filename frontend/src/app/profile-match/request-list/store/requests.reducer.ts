@@ -4,7 +4,7 @@ import {
   loadRequestsSuccess,
   loadRequestsFailure,
   addRequest,
-  cancelRequest,
+  cancelRequest, approveRequest, requestApproved, requestCanceled, approveRequestSuccess,
 } from './requests.actions';
 import { User } from '../../../shared/models/user';
 import { matchRequestCanceled, matchRequested } from '../../match-list/store/matches.actions';
@@ -32,6 +32,10 @@ export const requestsReducer = createReducer(
     ...state,
     requests: state.requests.filter(request => request.id !== requestId)
   })),
+  on(approveRequest, (state, { requestId }) => ({
+    ...state,
+    requests: state.requests.filter(request => request.id !== requestId)
+  })),
   on(matchRequested, (state, {user}) => ({
     ...state,
     requests: [
@@ -40,7 +44,22 @@ export const requestsReducer = createReducer(
     ],
   })),
 
+  on(approveRequestSuccess, (state) => ({
+    ...state,
+    requests: [],
+  })),
+
+  on(requestApproved, (state) => ({
+    ...state,
+    requests: [],
+  })),
+
   on(matchRequestCanceled, (state, { user }) => ({
+    ...state,
+    requests: state.requests.length ? [...state.requests.filter((request) => user.id !== request.id)] : [],
+  })),
+
+  on(requestCanceled, (state, { user }) => ({
     ...state,
     requests: state.requests.length ? [...state.requests.filter((request) => user.id !== request.id)] : [],
   })),

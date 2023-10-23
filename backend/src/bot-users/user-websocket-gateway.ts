@@ -99,13 +99,13 @@ export class UsersWebSocketGateway
   ): Promise<any> {
     try {
       // Assume userService has a method to handle match cancellation requests
-      const { connections, user } = await this.userService.cancelRequestMatch(
+      const { partner, user } = await this.userService.cancelRequestMatch(
         client.id,
         data.id,
       );
       client.emit('cancelRequestMatchResponse', { success: true });
 
-      connections.forEach((connection) => {
+      partner.connections?.forEach((connection) => {
         try {
           this.server
             .to(connection.connectId)
@@ -117,6 +117,68 @@ export class UsersWebSocketGateway
     } catch (error) {
       console.error('handleCancelRequestMatch error', error.message);
       client.emit('cancelRequestMatchResponse', { error: error.message });
+    }
+  }
+
+  @SubscribeMessage('approveRequest')
+  async handleApproveRequest(
+    client: Socket,
+    data: { id: number },
+  ): Promise<any> {
+    try {
+      // Assume userService has a method to handle match requests
+      const { partner, user, hasPartners } =
+        await this.userService.cancelRequest(client.id, data.id, true);
+
+      if (!hasPartners) {
+        await this.profileMatchActionsService.onStartChat({
+          partnerId: partner.userId,
+          userId: user.userId,
+        });
+
+        client.emit('approveRequestResponse', { success: true });
+
+        partner.connections?.forEach((connection) => {
+          try {
+            this.server
+              .to(connection.connectId)
+              .emit('requestApproved', { success: true });
+          } catch (e) {
+            console.error('matchRequest: ', e.message);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('handleRequestMatch error', error.message);
+      client.emit('approveRequestResponse', { error: error.message });
+    }
+  }
+
+  @SubscribeMessage('cancelRequest')
+  async handleCancelRequest(
+    client: Socket,
+    data: { id: number },
+  ): Promise<any> {
+    try {
+      // Assume userService has a method to handle match cancellation requests
+      const { partner, user } = await this.userService.cancelRequest(
+        client.id,
+        data.id,
+      );
+      client.emit('cancelRequestResponse', { success: true });
+
+      partner.connections?.forEach((connection) => {
+        try {
+          this.server
+            .to(connection.connectId)
+            .emit('requestCanceled', { user: user });
+        } catch (e) {
+          console.error('requestCancelled: ', e.message);
+        }
+      });
+    } catch (error) {
+      console.error('handleCancelRequest error', error.message);
+      client.emit('cancelRequestResponse', { error: error.message });
     }
   }
 

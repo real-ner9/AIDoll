@@ -34,9 +34,7 @@ export class ProfileMatchActionsService {
   placeholderImageUrl =
     'AgACAgIAAxkBAAIGpWUMQzDOvVx0H2hS1u202IxgA-MIAALzzDEbnLZhSPp9IdN8EPI3AQADAgADcwADMAQ';
 
-  constructor(
-    // private readonly userService: UserService
-  ) {}
+  constructor() {} // private readonly userService: UserService
 
   init(bot: Telegraf) {
     this.bot = bot;
@@ -654,53 +652,41 @@ export class ProfileMatchActionsService {
     // }
   }
 
-  async onStartChat(ctx, { partnerId }: { partnerId: string }) {
+  async onStartChat({
+    partnerId,
+    userId,
+  }: {
+    partnerId: string;
+    userId: string;
+  }) {
     // const userId = this.getUserId(ctx);
-    // try {
-    //   await ctx
-    //     .deleteMessage()
-    //     .catch((e) =>
-    //       console.error('onStartChat deleteMessage error: ', e.message),
-    //     );
-    //   const room = randomStringGenerator();
-    //
-    //   await this.userService.setActiveRoom(userId, room);
-    //   await this.userService.setActiveRoom(partnerId, room);
-    //   await this.userService.setCurrentPartner(userId, partnerId);
-    //   await this.userService.setCurrentPartner(partnerId, userId);
-    //   await this.userService.setState(userId, UserState.IN_CHAT);
-    //   await this.userService.setState(partnerId, UserState.IN_CHAT);
-    //   const partnerChatKeyboard = Markup.inlineKeyboard([
-    //     Markup.button.callback('Завершить чат', 'end_chat'),
-    //   ]);
-    //
-    //   await ctx
-    //     .reply('💑 Комната создана. Приятного общения!', partnerChatKeyboard)
-    //     .catch(async (err, ctx) => {
-    //       await this.handleBotEventError(
-    //         'events.connectedWithPartner: ',
-    //         err,
-    //         ctx,
-    //       );
-    //     });
-    //
-    //   await this.bot.telegram
-    //     .sendMessage(
-    //       partnerId,
-    //       '💑 Комната создана. Приятного общения!',
-    //       partnerChatKeyboard,
-    //     )
-    //     .catch((error) => {
-    //       console.error('An error:', error.message);
-    //       ctx
-    //         .reply(
-    //           `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-    //         )
-    //         .catch((err) => console.error(err.message));
-    //     });
-    // } catch (e) {
-    //   console.error('like error: ', e.message);
-    // }
+    try {
+      const partnerChatKeyboard = Markup.inlineKeyboard([
+        Markup.button.callback('Завершить чат', 'end_chat'),
+      ]);
+
+      await this.bot.telegram
+        .sendMessage(
+          userId,
+          '💑 Комната создана. Приятного общения!',
+          partnerChatKeyboard,
+        )
+        .catch((error) => {
+          console.error('An onStartChat:', error.message);
+        });
+
+      await this.bot.telegram
+        .sendMessage(
+          partnerId,
+          '💑 Комната создана. Приятного общения!',
+          partnerChatKeyboard,
+        )
+        .catch((error) => {
+          console.error('An onStartChat:', error.message);
+        });
+    } catch (e) {
+      console.error('onStartChat error: ', e.message);
+    }
   }
 
   async onBlockedUser(ctx, { partnerId }: { partnerId: string }) {
