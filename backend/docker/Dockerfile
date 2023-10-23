@@ -1,9 +1,12 @@
-FROM node:18 AS go_to_vrit_app
-
+# Этап сборки
+FROM node:18 as build
 WORKDIR /app
-COPY .. /app
-
+COPY ./frontend /app
 RUN npm ci
-RUN npm run build
+RUN npm run build -- --output-path=./dist/frontend
 
-CMD npm run start:prod
+# Этап размещения
+FROM nginx:alpine
+COPY --from=build /app/dist/frontend /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
