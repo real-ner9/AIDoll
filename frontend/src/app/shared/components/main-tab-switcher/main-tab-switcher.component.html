@@ -1,50 +1,21 @@
-<mat-tab-group
-  #tabGroup
-  [(selectedIndex)]="activeLinkIndex"
-  class="main-tab-switcher"
-  (selectedTabChange)="onTabChange($event)"
-  headerPosition="below">
-  <mat-tab>
-    <ng-template mat-tab-label>
-      <div class="tab-label-container" [class.active]="activeLinkIndex === 0">
-        <div
-          [class.active]="activeLinkIndex === 0"
-          class="icon-container">
-          <app-icon [icon]="activeLinkIndex === 0 ? 'matches-active' : 'matches'"></app-icon>
-        </div>
-        <div class="tab-label tab-label_matches">Мэтчи</div>
+<div class="main-tab-switcher">
+  <nav mat-tab-nav-bar>
+    <a mat-tab-link
+       *ngFor="let link of navLinks"
+       [routerLink]="link.link"
+       routerLinkActive
+       #rla="routerLinkActive"
+       [disabled]="!!link.disabled"
+       [active]="rla.isActive">
+      <div [class.active]="rla.isActive" class="tab-label-container">
+        <span [class.active]="rla.isActive" class="icon-container">
+          <app-icon [icon]="$any(rla.isActive ? link.icon + '-active' : link.icon)"></app-icon>
+        </span>
+        <span class="tab-label tab-label_{{link.labelKey}}">
+          {{ link.label }}
+        </span>
       </div>
-    </ng-template>
-    <ng-template matTabContent>
-      <router-outlet></router-outlet>
-    </ng-template>
-  </mat-tab>
-  <mat-tab>
-    <ng-template mat-tab-label>
-      <div class="tab-label-container" [class.active]="activeLinkIndex === 1">
-        <div [class.active]="activeLinkIndex === 1"
-             class="icon-container">
-          <app-icon [icon]="activeLinkIndex === 1 ? 'feed-active' : 'feed'"></app-icon>
-        </div>
-        <div class="tab-label tab-label_feed">Лента</div>
-      </div>
-    </ng-template>
-    <ng-template matTabContent>
-      <router-outlet></router-outlet>
-    </ng-template>
-  </mat-tab>
-  <mat-tab disabled>
-    <ng-template mat-tab-label>
-      <div class="tab-label-container" [class.active]="activeLinkIndex === 2">
-        <div [class.active]="activeLinkIndex === 2"
-             class="icon-container">
-          <app-icon [icon]="activeLinkIndex === 2 ? 'settings-active' : 'settings'"></app-icon>
-        </div>
-        <div class="tab-label tab-label_settings">Профиль</div>
-      </div>
-    </ng-template>
-    <ng-template matTabContent>
-      <router-outlet></router-outlet>
-    </ng-template>
-  </mat-tab>
-</mat-tab-group>
+    </a>
+  </nav>
+</div>
+<router-outlet></router-outlet>

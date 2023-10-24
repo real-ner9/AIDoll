@@ -8,64 +8,39 @@ import { Subject, takeUntil } from 'rxjs';
   templateUrl: './main-tab-switcher.component.html',
   styleUrls: ['./main-tab-switcher.component.scss']
 })
-export class MainTabSwitcherComponent implements OnInit, OnDestroy {
-  activeLinkIndex: number | null = 0;
-  private destroy$ = new Subject<void>();
-  @ViewChild('tabGroup', { static: false }) tabGroup!: MatTabGroup;
-  isChangeUrl = false;
-
-  constructor(
-    private router: Router,
-    private route: ActivatedRoute,
-  ) {}
-
-  ngOnInit() {
-    this.route.url.pipe(
-      takeUntil(this.destroy$),
-    ).subscribe((data) => {
-      this.tabGroup && this.setActiveTabIndex(this.router.url);
+export class MainTabSwitcherComponent implements OnInit {
+  title = 'angular-material-tab-router';
+  navLinks: any[];
+  activeLinkIndex = -1;
+  constructor(private router: Router) {
+    this.navLinks = [
+      {
+        label: 'Мэтчи',
+        labelKey: 'matches',
+        link: '/matches',
+        index: 0,
+        icon: 'matches',
+      },
+      {
+        label: 'Лента',
+        labelKey: 'feed',
+        link: '/feed',
+        index: 1,
+        icon: 'feed',
+      },
+      {
+        label: 'Профиль',
+        labelKey: 'settings',
+        link: '/settings',
+        disabled: true,
+        index: 1,
+        icon: 'settings',
+      },
+    ];
+  }
+  ngOnInit(): void {
+    this.router.events.subscribe((res) => {
+      this.activeLinkIndex = this.navLinks.indexOf(this.navLinks.find(tab => tab.link === '.' + this.router.url));
     });
-
-    setTimeout(() => {
-      this.tabGroup && this.setActiveTabIndex(this.router.url);
-    });
-  }
-
-  setActiveTabIndex(url: string) {
-    console.log(url);
-    if (url.includes('matches')) {
-      this.activeLinkIndex = 0;
-    } else if (url.includes('feed')) {
-      this.isChangeUrl = true;
-      this.activeLinkIndex = 1;
-    } else if (url.includes('settings')) {
-      this.isChangeUrl = true;
-      this.activeLinkIndex = 2;
-    } else {
-      this.activeLinkIndex = 0;
-    }
-  }
-
-  onTabChange(event: MatTabChangeEvent) {
-    if (!this.isChangeUrl) {
-      this.isChangeUrl = false;
-      switch (event.index) {
-        case 0:
-          this.router.navigate(['/matches']);
-          break;
-        case 1:
-          this.router.navigate(['/feed']);
-          break;
-        case 2:
-          this.router.navigate(['/settings']);
-          break;
-      }
-    }
-    this.isChangeUrl = false;
-  }
-
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }
