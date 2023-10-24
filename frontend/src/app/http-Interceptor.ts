@@ -8,7 +8,6 @@ export class HttpInterceptorService implements HttpInterceptor {
   constructor() { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    console.log('intercept');
     const authData = localStorage.getItem('authData');
     if (authData) {
       const authReq = req.clone({

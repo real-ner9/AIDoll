@@ -7,7 +7,7 @@ export const loadMatches = createAction('[Matches] Load Matches');
 export const loadMatchesSuccess = createAction('[Matches] Load Matches Success', props<{ matches: Page<Match> }>());
 export const loadMatchesFailure = createAction('[Matches] Load Matches Failure', props<{ error: any }>());
 
-export const addMatch = createAction('[Matches] Add Match', props<{ match: Match }>());
+export const addMatch = createAction('[Matches] Add Match', props<{ match: Match, hasPartnerLikedUser?: boolean }>());
 export const matchToRequest = createAction('[Matches] Match To Request', props<{ matchId: number }>());
 export const removeMatch = createAction('[Matches] Remove Match', props<{ matchId: number }>());
 export const requestMatch = createAction(

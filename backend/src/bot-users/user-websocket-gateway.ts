@@ -182,6 +182,58 @@ export class UsersWebSocketGateway
     }
   }
 
+  @SubscribeMessage('sendLike')
+  async handleSendLike(client: Socket, data: { id: number }) {
+    try {
+      const { user, partner, hasPartnerLikedUser } =
+        await this.userService.webAddLike(client.id, data.id);
+
+      partner.connections?.forEach((connection) => {
+        try {
+          this.server
+            .to(connection.connectId)
+            .emit('liked', { user, hasPartnerLikedUser });
+        } catch (e) {
+          console.error('liked error: ', e.message);
+        }
+      });
+
+      await this.profileMatchActionsService.like({
+        user,
+        partnerId: partner.userId,
+        hasPartnerLikedUser: hasPartnerLikedUser,
+      });
+
+      return { success: true, id: data.id };
+    } catch (error) {
+      console.error('handleSendLike error', error.message);
+      return { error: error.message };
+    }
+  }
+
+  @SubscribeMessage('sendDislike')
+  async handleSendDislike(client: Socket, data: { id: number }) {
+    try {
+      const { user, partner } = await this.userService.webAddDislike(
+        client.id,
+        data.id,
+      );
+
+      partner.connections?.forEach((connection) => {
+        try {
+          this.server.to(connection.connectId).emit('disliked', { user });
+        } catch (e) {
+          console.error('disliked error: ', e.message);
+        }
+      });
+
+      return { success: true, id: data.id };
+    } catch (error) {
+      console.error('handleSendDislike error', error.message);
+      return { error: error.message };
+    }
+  }
+
   inviteToChat(userFromId: string, userToId: string) {
     this.server.to(userToId).emit('inviteToChat', { from: userFromId });
   }

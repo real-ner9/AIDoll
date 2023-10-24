@@ -17,10 +17,6 @@ export class MatchesFacade {
 
   constructor(private store: Store) {}
 
-  addMatch(match: Match) {
-    this.store.dispatch(MatchesActions.addMatch({ match }));
-  }
-
   removeMatch(matchId: number) {
     this.store.dispatch(MatchesActions.removeMatch({ matchId }));
   }

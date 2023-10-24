@@ -30,7 +30,7 @@
     <button mat-raised-button (click)="handleCancel()" class="icon-button">
       <app-icon icon="cancel"></app-icon>
     </button>
-    <button *ngIf="!value.currentPartner" mat-raised-button (click)="handleApprove()" class="icon-button approve">
+    <button [disabled]="!!value.currentPartner" mat-raised-button (click)="handleApprove()" class="icon-button approve">
       <app-icon icon="approve"></app-icon>
     </button>
   </div>
@@ -44,7 +44,7 @@
     </ng-container>
     <ng-template #requestChatButton>
       <div class="actions">
-        <button *ngIf="!value.currentPartner" mat-raised-button (click)="handleRequest()" class="text-button primary">
+        <button [disabled]="!!value.currentPartner" mat-raised-button (click)="handleRequest()" class="text-button primary">
           Пригласить в чат
         </button>
       </div>

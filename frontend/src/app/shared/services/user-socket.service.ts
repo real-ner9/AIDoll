@@ -100,6 +100,46 @@ export class SocketService {
     });
   }
 
+  sendLike(id: number): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.emit('sendLike', { id }, (response: any) => {
+        if (response.error) {
+          observer.error(response.error);
+        } else {
+          observer.next(response);
+          observer.complete();
+        }
+      });
+    });
+  }
+
+  sendDislike(id: number): Observable<any> {
+    return new Observable<any>(observer => {
+      this.socket.emit('sendDislike', { id }, (response: any) => {
+        if (response.error) {
+          observer.error(response.error);
+        } else {
+          observer.next(response);
+          observer.complete();
+        }
+      });
+    });
+  }
+
+  liked() {
+    return new Observable<{ user: User; hasPartnerLikedUser: boolean }>(observer => {
+      this.socket.on('liked', ({ user, hasPartnerLikedUser }: { user: User; hasPartnerLikedUser: boolean }) =>
+        observer.next({user, hasPartnerLikedUser}));
+    });
+  }
+
+  disliked() {
+    return new Observable<{ user: User }>(observer => {
+      this.socket.on('disliked', ({ user }: { user: User }) =>
+        observer.next({ user }));
+    });
+  }
+
   public onApproveRequestResponse(): Observable<any> {
     return new Observable<any>(observer => {
       this.socket.on('approveRequestResponse', (response: any) => {

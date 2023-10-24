@@ -45,4 +45,12 @@ export class LikesFacade {
       this.store.dispatch(LikesActions.loadLikes({pageSize, pageNumber: ++pageNumber}));
     });
   }
+
+  like(userId: number) {
+    this.store.dispatch(LikesActions.like({ userId }));
+  }
+
+  dislike(userId: number) {
+    this.store.dispatch(LikesActions.dislike({ userId }));
+  }
 }

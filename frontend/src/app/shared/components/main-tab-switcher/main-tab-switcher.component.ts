@@ -32,6 +32,7 @@ export class MainTabSwitcherComponent implements OnInit, OnDestroy {
   }
 
   setActiveTabIndex(url: string) {
+    console.log(url);
     if (url.includes('matches')) {
       this.activeLinkIndex = 0;
     } else if (url.includes('feed')) {

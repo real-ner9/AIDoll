@@ -12,6 +12,7 @@ import { StoreModule } from '@ngrx/store';
 import { routerReducer, StoreRouterConnectingModule } from '@ngrx/router-store';
 import { EffectsModule } from '@ngrx/effects';
 import { IntersectionObserverModule } from '@ng-web-apis/intersection-observer';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 declare global {
   interface Window {
@@ -47,6 +48,7 @@ declare global {
         },
       }
     ),
+    MatSnackBarModule,
   ],
   providers: [
     {

@@ -325,6 +325,36 @@ export class UserService {
     }
   }
 
+  async webAddLike(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User; hasPartnerLikedUser: boolean }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    await this.addLike(user.userId, partner.userId);
+
+    const hasPartnerLikedUser = await this.hasUserLikedPartner(
+      partner.userId,
+      user.userId,
+    );
+
+    return { user, partner, hasPartnerLikedUser };
+  }
+
   async addDislike(userId: string, partnerId: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { userId },
@@ -348,6 +378,31 @@ export class UserService {
       const newDislike = new Dislike(user, partnerId);
       await this.dislikeRepository.save(newDislike);
     }
+  }
+
+  async webAddDislike(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    await this.addDislike(user.userId, partner.userId);
+
+    return { user, partner };
   }
 
   async hasUserLikedPartner(
@@ -755,7 +810,14 @@ export class UserService {
       .andWhere('likeIncoming.id IS NOT NULL')
       .andWhere('likeOutgoing.id IS NOT NULL')
       .andWhere('sentRequest.id IS NULL') // исключаем пользователей, которые отправили запрос
-      .orderBy('user.id', 'DESC');
+      .orderBy(
+        'CASE ' +
+          'WHEN likeOutgoing.id IS NULL THEN likeIncoming.id ' +
+          'WHEN likeIncoming.id IS NULL THEN likeOutgoing.id ' +
+          'WHEN likeOutgoing.id > likeIncoming.id THEN likeOutgoing.id ' +
+          'ELSE likeIncoming.id END',
+        'DESC',
+      );
     const users = await baseQuery.getMany();
     const total = await baseQuery.getCount();
 
@@ -873,16 +935,9 @@ export class UserService {
         '(iLiked.user_id = :userId AND iLiked.likedUserId = user.userId)',
         { userId },
       )
-      .leftJoinAndSelect(
-        Dislike,
-        'dislike',
-        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
-        { userId },
-      )
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
       .andWhere('user.isVisibleToOthers = true')
-      .andWhere('dislike.id IS NULL')
       .andWhere('likedMe.id IS NOT NULL')
       .andWhere('iLiked.id IS NULL')
       .orderBy('likedMe.id', 'DESC');
@@ -976,7 +1031,7 @@ export class UserService {
     socketId: string,
     partnerId: number,
     approved: boolean = false,
-  ): Promise<{ user: User; partner: User, hasPartners: boolean }> {
+  ): Promise<{ user: User; partner: User; hasPartners: boolean }> {
     // Находим соединение по socketId
     const connection = await this.connectionRepository.findOne({
       where: { connectId: socketId },

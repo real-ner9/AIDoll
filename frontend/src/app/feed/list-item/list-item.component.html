@@ -20,10 +20,10 @@
     <img src="{{ 'image_2021-03-14_23-22-02.png' | photoUrl }}" alt="Фотография с {{ value.name }}">
   </div>
   <div class="actions">
-    <button mat-raised-button (click)="handleDislike()" class="icon-button">
+    <button [disabled]="likedUser.has(value.id)" mat-raised-button (click)="handleDislike(value)" class="icon-button">
       <app-icon icon="dislike"></app-icon>
     </button>
-    <button mat-raised-button (click)="handleLike()" class="icon-button approve">
+    <button [disabled]="likedUser.has(value.id)" mat-raised-button (click)="handleLike(value)" class="icon-button approve">
       <app-icon icon="like"></app-icon>
     </button>
   </div>

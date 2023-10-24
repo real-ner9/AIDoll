@@ -25,7 +25,10 @@ export const matchesReducer = createReducer(
   on(loadMatches, state => ({ ...state, loading: true })),
   on(loadMatchesSuccess, (state, { matches }) => ({ ...state, matches: [...matches.content], loading: false })),
   on(loadMatchesFailure, (state, { error }) => ({ ...state, error, loading: false })),
-  on(addMatch, (state, { match }) => ({ ...state, matches: [...state.matches, match] })),
+  on(addMatch, (state, { match, hasPartnerLikedUser }) => ({
+    ...state,
+    matches: hasPartnerLikedUser ? [match, ...state.matches] : state.matches,
+  })),
   on(removeMatch, (state, { matchId }) => ({
     ...state,
     matches: state.matches.filter(match => match.id !== matchId)

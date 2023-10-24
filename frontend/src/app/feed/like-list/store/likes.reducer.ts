@@ -58,15 +58,22 @@ export const likesReducer = createReducer(
   on(LikesActions.like, (state, { userId }) => ({
     ...state,
     data: state.data.filter(({id}) => id !== userId),
-    totalElements: 0,
     error: null,
   })),
 
   on(LikesActions.dislike, (state, { userId }) => ({
     ...state,
     data: state.data.filter(({id}) => id !== userId),
-    totalElements: 0,
-    totalPages: 1,
+    error: null,
+  })),
+
+  on(LikesActions.liked, (state, { user, hasPartnerLikedUser }) => ({
+    ...state,
+    // Если пользователь его не лайкал, то переносим сюда, если же лайкнул, то добавляем в мэтчи
+    data: !hasPartnerLikedUser ? [
+      user,
+      ...state.data
+    ] : state.data,
     error: null,
   })),
 );

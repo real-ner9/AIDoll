@@ -17,16 +17,6 @@ export const loadLikesFailure = createAction(
   props<{ error: any }>()
 );
 
-export const like = createAction(
-  '[Likes] Like',
-  props<{ userId: number }>()
-);
-
-export const dislike = createAction(
-  '[Likes] Dislike',
-  props<{ userId: number }>()
-);
-
 export const clearLikes = createAction('[Likes] Clear Users');
 
 export const setPageSize = createAction(
@@ -37,4 +27,28 @@ export const setPageSize = createAction(
 export const setPageNumber = createAction(
   '[Likes] Set Page Number',
   props<{ pageNumber: number }>()
+);
+
+export const like = createAction(
+  '[Likes] Like',
+  props<{userId: number}>(),
+);
+
+export const dislike = createAction(
+  '[Likes] Dislike',
+  props<{userId: number}>(),
+);
+
+export const likeSuccess = createAction(
+  '[Likes] Like Success',
+);
+
+export const liked = createAction(
+  '[Likes] Liked',
+  props<{user: User, hasPartnerLikedUser: boolean }>(),
+);
+
+export const likeFailure = createAction(
+  '[Likes] Like Failure',
+  props<{ error: any }>()
 );

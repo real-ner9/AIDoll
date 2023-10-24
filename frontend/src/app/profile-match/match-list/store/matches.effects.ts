@@ -6,6 +6,7 @@ import { debounceTime, of } from 'rxjs';
 import * as matchesActions from './matches.actions';
 import { UserService } from '../../../shared/services/user.service';
 import { SocketService } from '../../../shared/services/user-socket.service';
+import * as LikesActions from '../../../feed/like-list/store/likes.actions';
 
 @Injectable()
 export class MatchesEffects {
@@ -60,6 +61,15 @@ export class MatchesEffects {
     this.socketService.onRequestCanceled().pipe(
       map(user => matchesActions.requestCanceled({ user })),
       catchError(error => of(matchesActions.loadMatchesFailure({ error })))  // или другой action для обработки ошибок
+    )
+  );
+
+  liked$ = createEffect(() =>
+    this.socketService.liked().pipe(
+      map(({ user, hasPartnerLikedUser}) =>
+        matchesActions.addMatch({ hasPartnerLikedUser, match: {...user, chatRequested: false} })
+      ),
+      catchError(error => of(LikesActions.loadLikesFailure({ error })))  // или другой action для обработки ошибок
     )
   );
 

@@ -4,6 +4,8 @@ import { debounceTime, of } from 'rxjs';
 import { catchError, map, mergeMap } from 'rxjs/operators';
 import * as FeedActions from './feed.actions';
 import { UserService } from '../../../shared/services/user.service';
+import { SocketService } from '../../../shared/services/user-socket.service';
+import { dislikeSuccess } from './feed.actions';
 
 @Injectable()
 export class FeedEffects {
@@ -21,8 +23,29 @@ export class FeedEffects {
       ))
   ));
 
+  like$ = createEffect(() => this.actions$.pipe(
+    ofType(FeedActions.like),
+    mergeMap(action =>
+      this.socketService.sendLike(action.userId).pipe(
+        map(() => FeedActions.likeSuccess()),
+        catchError(error => of(FeedActions.likeFailure({ error })))
+      )
+    )
+  ));
+
+  dislike$ = createEffect(() => this.actions$.pipe(
+    ofType(FeedActions.dislike),
+    mergeMap(action =>
+      this.socketService.sendDislike(action.userId).pipe(
+        map(() => FeedActions.dislikeSuccess()),
+        catchError(error => of(FeedActions.dislikeFailure({ error })))
+      )
+    )
+  ));
+
   constructor(
     private actions$: Actions,
     private userService: UserService,
+    private socketService: SocketService,
   ) {}
 }

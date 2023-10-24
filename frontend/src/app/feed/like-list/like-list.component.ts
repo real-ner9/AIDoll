@@ -25,4 +25,12 @@ export class LikeListComponent implements OnInit, OnDestroy {
       this.facade.onScroll();
     }
   }
+
+  onLike(userId: number) {
+    this.facade.like(userId);
+  }
+
+  onDislike(userId: number) {
+    this.facade.dislike(userId);
+  }
 }

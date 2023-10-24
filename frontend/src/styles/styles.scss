@@ -31,3 +31,7 @@ html, body {
 }
 
 body { margin: 0; font-family: $font-family; }
+
+button[disabled] {
+  opacity: 0.3;
+}

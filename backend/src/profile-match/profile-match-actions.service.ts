@@ -372,64 +372,48 @@ export class ProfileMatchActionsService {
     // }
   }
 
-  async like(ctx, { partnerId }: { partnerId: string }) {
-    // const userId = this.getUserId(ctx);
-    // try {
-    //   await this.userService.addLike(userId, partnerId);
-    //   await this.browsingProfile(ctx);
-    //   const user = await this.userService.getUserFromCacheOrDB(userId);
-    //   const hasPartnerLikedUser = await this.userService.hasUserLikedPartner(
-    //     partnerId,
-    //     userId,
-    //   );
-    //   const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
-    //   const partnerKeyboard = hasPartnerLikedUser
-    //     ? [
-    //         !user.currentPartner
-    //           ? [
-    //               Markup.button.callback(
-    //                 'Позвать в чат',
-    //                 `request_to_chat?partnerId=${user.userId}&offset=0`,
-    //               ),
-    //             ]
-    //           : [
-    //               Markup.button.callback(
-    //                 'Позвать в чат (пользователь занят)',
-    //                 `-`,
-    //               ),
-    //             ],
-    //         [Markup.button.callback('Главное меню', 'main_menu')],
-    //       ]
-    //     : [
-    //         [
-    //           Markup.button.callback(
-    //             '👍',
-    //             `outside_like?partnerId=${user.userId}`,
-    //           ),
-    //           Markup.button.callback(
-    //             '👎',
-    //             `outside_dislike?partnerId=${user.userId}`,
-    //           ),
-    //         ],
-    //       ];
-    //   await ctx.telegram
-    //     .sendPhoto(partnerId, userImageUrlToSend, {
-    //       reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
-    //       parse_mode: 'HTML',
-    //       caption: `${
-    //         hasPartnerLikedUser ? 'У тебя мэтч с' : 'Ты понравился'
-    //       }\n${this.getCaptionText(user, user.showUsername)}`,
-    //     })
-    //     .catch(async (err) => {
-    //       await this.handleBotEventError(
-    //         'onEditProfile ctx error:  ',
-    //         err,
-    //         ctx,
-    //       );
-    //     });
-    // } catch (e) {
-    //   console.error('like error: ', e.message);
-    // }
+  async like({
+    user,
+    partnerId,
+    hasPartnerLikedUser,
+  }: {
+    user: User;
+    partnerId: string;
+    hasPartnerLikedUser: boolean;
+  }) {
+    try {
+      const userImageUrlToSend = user?.photoUrl || this.placeholderImageUrl;
+      const partnerKeyboard = hasPartnerLikedUser
+        ? [
+            [
+              Markup.button.webApp(
+                'Перейти в чат',
+                `${process.env.WEB_APP_URL}/matches/requests`,
+              ),
+            ],
+          ]
+        : [
+            [
+              Markup.button.webApp(
+                'Смотреть лайки',
+                `${process.env.WEB_APP_URL}/feed/likes`,
+              ),
+            ],
+          ];
+      await this.bot.telegram
+        .sendPhoto(partnerId, userImageUrlToSend, {
+          reply_markup: Markup.inlineKeyboard(partnerKeyboard).reply_markup,
+          parse_mode: 'HTML',
+          caption: `${
+            hasPartnerLikedUser ? 'У тебя мэтч с' : 'Ты понравился'
+          }\n${this.getCaptionText(user, user.showUsername)}`,
+        })
+        .catch(async (err) => {
+          console.error('like error: ', err.message);
+        });
+    } catch (e) {
+      console.error('like error: ', e.message);
+    }
   }
 
   async dislike(ctx, { partnerId }: { partnerId: string }) {

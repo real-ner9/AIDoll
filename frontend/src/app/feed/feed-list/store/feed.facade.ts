@@ -53,4 +53,12 @@ export class FeedFacade {
       this.store.dispatch(FeedActions.loadFeed({ pageSize, pageNumber: ++pageNumber }));
     });
   }
+
+  like(userId: number) {
+    this.store.dispatch(FeedActions.like({ userId }));
+  }
+
+  dislike(userId: number) {
+    this.store.dispatch(FeedActions.dislike({ userId }));
+  }
 }
