@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Markup, Telegraf } from 'telegraf';
 import { I18nService } from 'nestjs-i18n';
 import { MessageService } from './message.service';
@@ -25,6 +25,7 @@ async function safeExecute(fn: Function, ctx, ...args: any[]) {
 
 @Injectable()
 export class ChatActionsService {
+  private readonly logger = new Logger(ChatActionsService.name);
   lang = 'ru';
   bot: Telegraf;
 
@@ -101,6 +102,7 @@ export class ChatActionsService {
       async () => {
         try {
           await this.userService.checkAndClearConnections();
+          this.logger.log('checkAndClearConnections success');
         } catch (error) {
           console.error('Error in the cron job:', error.message);
         }
