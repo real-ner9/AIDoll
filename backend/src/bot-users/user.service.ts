@@ -6,8 +6,10 @@ import { UserState } from './types/user-state';
 import { UserRole } from './types/user-role';
 import { Like } from './schemas/like.entity';
 import { Dislike } from './schemas/dislike.entity';
-import { Match } from './schemas/match.entity';
-import { UserLiked } from './schemas/user-liked.entity';
+import { Connection } from './schemas/connection.entity';
+import { ChatRequest } from './schemas/chat-request.entity';
+import { Page, paginate } from '../utils/paginate';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -15,6 +17,22 @@ export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 export class UserService {
   // deleteDelay in minutes
   deleteDelay = 30 * 60 * 1000;
+  showedFeedParams = [
+    'user.id',
+    'user.currentPartner',
+    'user.age',
+    'user.online',
+    'user.name',
+    'user.role',
+    'user.photoUrl',
+    'user.description',
+    'user.lastLoginTimestamp',
+  ];
+  showedMatchParams = [
+    ...this.showedFeedParams,
+    'user.username',
+    'user.showUsername',
+  ];
 
   // Initialize user cache
   userCache: Record<string, User> = {};
@@ -26,7 +44,15 @@ export class UserService {
     private readonly likeRepository: Repository<Like>,
     @InjectRepository(Dislike)
     private readonly dislikeRepository: Repository<Dislike>,
+    @InjectRepository(Connection)
+    private readonly connectionRepository: Repository<Connection>,
+    @InjectRepository(ChatRequest)
+    private readonly chatRequestRepository: Repository<ChatRequest>,
   ) {
+    setTimeout(async () => {
+      await this.clearConnections();
+    });
+
     setInterval(async () => {
       this.invalidateCache();
       try {
@@ -39,6 +65,14 @@ export class UserService {
         );
       }
     }, this.deleteDelay);
+  }
+
+  private async clearConnections() {
+    try {
+      await this.connectionRepository.clear();
+    } catch (error) {
+      console.error('Error clearing connections table:', error.message);
+    }
   }
 
   private async removePastPartners(): Promise<void> {
@@ -75,7 +109,7 @@ export class UserService {
     if (user) {
       this.updateCache(user);
     }
-    return user;
+    return user || null;
   }
 
   async setActiveRoom(userId: string, roomId: string): Promise<void> {
@@ -319,6 +353,36 @@ export class UserService {
     }
   }
 
+  async webAddLike(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User; hasPartnerLikedUser: boolean }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    await this.addLike(user.userId, partner.userId);
+
+    const hasPartnerLikedUser = await this.hasUserLikedPartner(
+      partner.userId,
+      user.userId,
+    );
+
+    return { user, partner, hasPartnerLikedUser };
+  }
+
   async addDislike(userId: string, partnerId: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { userId },
@@ -342,6 +406,31 @@ export class UserService {
       const newDislike = new Dislike(user, partnerId);
       await this.dislikeRepository.save(newDislike);
     }
+  }
+
+  async webAddDislike(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    await this.addDislike(user.userId, partner.userId);
+
+    return { user, partner };
   }
 
   async hasUserLikedPartner(
@@ -654,5 +743,409 @@ export class UserService {
       .getOne();
 
     return user || null;
+  }
+
+  async getOnline(userId: string | number): Promise<boolean> {
+    const user = await this.getUserFromCacheOrDB(`${userId}`);
+
+    return user?.online || null;
+  }
+
+  async setOnline(userId: number | string, online: boolean) {
+    const user = await this.getUserFromCacheOrDB(`${userId}`);
+
+    if (user) {
+      user.online = online;
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
+  }
+
+  async setConnection(userId: string | number, connectionId: string) {
+    const user = await this.userRepository.findOne({
+      where: { userId: `${userId}` },
+      relations: ['connections'],
+    });
+
+    if (!user) return;
+
+    const existingConnection = user.connections.find(
+      (connection) => connection.connectId === connectionId,
+    );
+    if (existingConnection) {
+      return await this.connectionRepository.remove(existingConnection);
+    }
+
+    const newConnection = new Connection(user, connectionId);
+
+    return await this.connectionRepository.save(newConnection);
+  }
+
+  async removeConnectionWithSocketId(connectionId: string) {
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: connectionId },
+      relations: ['user'],
+    });
+
+    if (connection) {
+      await this.connectionRepository.remove(connection);
+
+      const activeConnections = await this.connectionRepository.count({
+        where: { user: { id: connection.user.id } },
+      });
+
+      if (activeConnections === 0 && connection.user) {
+        connection.user.online = false;
+        await this.userRepository.save(connection.user);
+      }
+    }
+  }
+
+  async getMatches(userId: number | string) {
+    userId = `${userId}`;
+    const baseQuery = this.userRepository
+      .createQueryBuilder('user')
+      .select(this.showedMatchParams)
+      .leftJoinAndSelect('user.receivedRequests', 'receivedRequest')
+      .leftJoinAndSelect('receivedRequest.sender', 'sender')
+      .leftJoinAndSelect('receivedRequest.receiver', 'receiver')
+      .leftJoin(
+        Like,
+        'likeOutgoing',
+        '(likeOutgoing.user_id = :userId AND likeOutgoing.likedUserId = user.userId)',
+        { userId },
+      )
+      .leftJoin(
+        Like,
+        'likeIncoming',
+        '(likeIncoming.user_id = user.userId AND likeIncoming.likedUserId = :userId)',
+        { userId },
+      )
+      .leftJoin(
+        Dislike,
+        'dislike',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
+        { userId },
+      )
+      .leftJoin(
+        ChatRequest,
+        'sentRequest',
+        'sentRequest.sender_id = user.userId AND sentRequest.receiver_id = :userId',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('dislike.id IS NULL')
+      .andWhere('likeIncoming.id IS NOT NULL')
+      .andWhere('likeOutgoing.id IS NOT NULL')
+      .andWhere('sentRequest.id IS NULL') // исключаем пользователей, которые отправили запрос
+      .orderBy(
+        'CASE ' +
+          'WHEN likeOutgoing.id IS NULL THEN likeIncoming.id ' +
+          'WHEN likeIncoming.id IS NULL THEN likeOutgoing.id ' +
+          'WHEN likeOutgoing.id > likeIncoming.id THEN likeOutgoing.id ' +
+          'ELSE likeIncoming.id END',
+        'DESC',
+      );
+    const users = await baseQuery.getMany();
+    const total = await baseQuery.getCount();
+
+    // Добавляем поле, показывающее, был ли отправлен запрос на чат
+    const enhancedUsers = users.map(
+      ({ receivedRequests, showUsername, username, ...user }) => ({
+        ...user,
+        username: showUsername ? username : null,
+        chatRequested: !!(
+          receivedRequests &&
+          receivedRequests?.length &&
+          receivedRequests.find(({ sender }) => sender.userId === userId)
+        ),
+      }),
+    );
+
+    return paginate({
+      list: enhancedUsers,
+      totalElements: total,
+      pageSize: 1,
+      pageNumber: 1,
+    });
+  }
+
+  async getRequests(userId: number | string) {
+    userId = `${userId}`;
+    const users = await this.userRepository
+      .createQueryBuilder('user')
+      .select(this.showedMatchParams)
+      .innerJoinAndSelect(
+        'user.sentRequests',
+        'chatRequest',
+        'chatRequest.sender_id = user.userId',
+      )
+      .where('chatRequest.receiver_id = :userId', { userId })
+      .orderBy('chatRequest.requestedAt', 'DESC')
+      .getMany();
+
+    const total = await this.userRepository
+      .createQueryBuilder('user')
+      .innerJoinAndSelect(
+        'user.sentRequests',
+        'chatRequest',
+        'chatRequest.sender_id = user.userId',
+      )
+      .where('chatRequest.receiver_id = :userId', { userId })
+      .orderBy('chatRequest.requestedAt', 'DESC')
+      .getCount();
+
+    const enhancedUsers = users.map(({ showUsername, username, ...user }) => ({
+      ...user,
+      username: showUsername ? username : null,
+    }));
+
+    return paginate<User>({
+      list: enhancedUsers,
+      totalElements: total,
+      pageSize: 1,
+      pageNumber: 1,
+    });
+  }
+
+  async getFeed(
+    userId: string | number,
+    pageSize: number,
+    pageNumber: number,
+  ): Promise<Page<User>> {
+    userId = `${userId}`;
+    const baseQuery = this.userRepository
+      .createQueryBuilder('user')
+      .select(this.showedFeedParams)
+      .leftJoin(
+        Like,
+        'like',
+        '(like.user_id = :userId AND like.likedUserId = user.userId)',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Dislike,
+        'dislike',
+        '(dislike.user_id = :userId AND dislike.dislikedUserId = user.userId)',
+        { userId },
+      )
+      .where('(user.userId != :userId)')
+      .andWhere('(user.isBlocked = false)')
+      .andWhere('(user.isVisibleToOthers = true)')
+      .andWhere('(dislike.id IS NULL)')
+      .andWhere('(like.id IS NULL)')
+      .addOrderBy('user.lastLoginTimestamp', 'DESC')
+      .addOrderBy('user.photoUrl', 'ASC');
+
+    // Получение пользователей с учетом пагинации
+    const users = await baseQuery
+      .skip((pageNumber - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    // Получение общего количества пользователей, соответствующих вашему запросу
+    const total = await baseQuery.getCount();
+
+    // Возвращение пользователей вместе с пагинационной информацией
+    return paginate<User>({
+      list: users,
+      totalElements: total,
+      pageSize,
+      pageNumber,
+    });
+  }
+
+  async getUsersWhoLikedMe(
+    userId: string | number,
+    pageSize: number,
+    pageNumber: number,
+  ): Promise<Page<User>> {
+    userId = `${userId}`;
+    const baseQuery = this.userRepository
+      .createQueryBuilder('user')
+      .select(this.showedFeedParams)
+      .leftJoinAndSelect(
+        Like,
+        'likedMe',
+        '(likedMe.user_id = user.userId AND likedMe.likedUserId = :userId)',
+        { userId },
+      )
+      .leftJoinAndSelect(
+        Like,
+        'iLiked',
+        '(iLiked.user_id = :userId AND iLiked.likedUserId = user.userId)',
+        { userId },
+      )
+      .where('user.userId != :userId')
+      .andWhere('user.isBlocked = false')
+      .andWhere('user.isVisibleToOthers = true')
+      .andWhere('likedMe.id IS NOT NULL')
+      .andWhere('iLiked.id IS NULL')
+      .orderBy('likedMe.id', 'DESC');
+
+    // Получение пользователей с учетом пагинации
+    const users = await baseQuery
+      .skip((pageNumber - 1) * pageSize)
+      .take(pageSize)
+      .getMany();
+
+    // Получение общего количества пользователей, которые лайкнули текущего пользователя
+    const total = await baseQuery.getCount();
+
+    // Возвращение пользователей вместе с пагинационной информацией
+    return paginate<User>({
+      list: users,
+      totalElements: total,
+      pageSize,
+      pageNumber,
+    });
+  }
+
+  async requestMatch(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User }> {
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    const existingChatRequest = await this.chatRequestRepository.findOne({
+      where: {
+        sender: { id: user.id },
+        receiver: { id: partner.id },
+      },
+    });
+    if (!existingChatRequest) {
+      const newChatRequest = new ChatRequest(user, partner);
+      await this.chatRequestRepository.save(newChatRequest);
+
+      return { user, partner: partner };
+    }
+  }
+
+  async cancelRequestMatch(
+    socketId: string,
+    partnerId: number,
+  ): Promise<{ user: User; partner: User }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    // Проверяем наличие существующего запроса на чат между этими двумя пользователями
+    const existingChatRequest = await this.chatRequestRepository.findOne({
+      where: {
+        sender: { id: user.id },
+        receiver: { id: partner.id },
+      },
+    });
+    if (existingChatRequest) {
+      // Если существующий запрос на чат найден, удаляем его
+      await this.chatRequestRepository.remove(existingChatRequest);
+
+      return { user, partner };
+    }
+  }
+
+  async cancelRequest(
+    socketId: string,
+    partnerId: number,
+    approved: boolean = false,
+  ): Promise<{ user: User; partner: User; hasPartners: boolean }> {
+    // Находим соединение по socketId
+    const connection = await this.connectionRepository.findOne({
+      where: { connectId: socketId },
+      relations: ['user'],
+    });
+    if (!connection || !connection.user) return;
+
+    // Получаем userId из соединения и находим пользователя и партнера
+    const userId = connection.user.userId;
+    const user = await this.userRepository.findOne({ where: { userId } });
+    const partner = await this.userRepository.findOne({
+      where: { id: partnerId },
+      relations: ['connections'],
+    });
+    if (!user || !partner) return;
+
+    // Проверяем наличие существующего запроса на чат между этими двумя пользователями
+    const existingChatRequest = await this.chatRequestRepository.findOne({
+      where: {
+        sender: { id: partner.id },
+        receiver: { id: user.id },
+      },
+    });
+    if (existingChatRequest) {
+      // Если существующий запрос на чат найден, удаляем его
+      await this.chatRequestRepository.remove(existingChatRequest);
+      const hasPartners = !!(partner.currentPartner || user.currentPartner);
+      if (approved && !hasPartners) {
+        const room = randomStringGenerator();
+
+        await this.setActiveRoom(user.userId, room);
+        await this.setActiveRoom(partner.userId, room);
+        await this.setCurrentPartner(user.userId, partner.userId);
+        await this.setCurrentPartner(partner.userId, user.userId);
+        await this.setState(user.userId, UserState.IN_CHAT);
+        await this.setState(partner.userId, UserState.IN_CHAT);
+      }
+
+      return { user, partner, hasPartners };
+    }
+  }
+
+  async getLastLoginTimestamp(userId: string): Promise<number | null> {
+    const user = await this.getUserFromCacheOrDB(userId);
+    return user?.lastLoginTimestamp || null;
+  }
+
+  async setLastLoginTimestamp(userId: string | number) {
+    userId = `${userId}`;
+    const user = await this.getUserFromCacheOrDB(userId);
+
+    if (user) {
+      const now = Date.now();
+      const debounce = 30 * 60 * 1000;
+
+      // если обновлялось меньше чем 30 минут назад, то не обновляем
+      // сделано для того, чтобы в feed не скакали записи
+      if (
+        !user.lastLoginTimestamp ||
+        now - user.lastLoginTimestamp > debounce
+      ) {
+        user.lastLoginTimestamp = now;
+      }
+
+      if (user.isBlocked) {
+        user.isBlocked = false;
+      }
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
+    }
   }
 }

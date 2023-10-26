@@ -1,0 +1,53 @@
+<div class="item" *ngIf="value">
+  <div class="name-container">
+    <span class="name">{{ value.name }}</span>
+    <a
+      *ngIf="value.username"
+      [href]="'https://t.me/' + value.username"
+      target="_blank" class="tg-link">
+      @{{ value.username }}
+    </a>
+  </div>
+  <div class="statuses">
+    <span class="online" *ngIf="value.online">В сети </span>
+    <span class="hint" *ngIf="page === 'requests'">{{ value.online ? ' • м' : 'М' }}ожно принять приглашение в чат</span>
+  </div>
+  <mat-chip-listbox class="chips">
+    <mat-chip *ngIf="value.age">
+      {{ value.age }}
+    </mat-chip>
+    <mat-chip color="primary" *ngIf="value.role">
+      {{ UserRoleMap[value.role] || value.role }}
+    </mat-chip>
+  </mat-chip-listbox>
+  <div class="content" *ngIf="value.description">
+    {{ value.description }}
+  </div>
+  <div class="image" *ngIf="value.photoUrl">
+    <img src="{{ value.photoUrl | photoUrl }}" alt="Фотография с {{ value.name }}">
+  </div>
+  <div class="actions" *ngIf="page === 'requests'">
+    <button mat-raised-button (click)="handleCancel()" class="icon-button">
+      <app-icon icon="cancel"></app-icon>
+    </button>
+    <button [disabled]="!!value.currentPartner" mat-raised-button (click)="handleApprove()" class="icon-button approve">
+      <app-icon icon="approve"></app-icon>
+    </button>
+  </div>
+  <ng-container *ngIf="page === 'matches'">
+    <ng-container *ngIf="value.chatRequested; else requestChatButton">
+      <div class="actions">
+        <button mat-raised-button (click)="handleCancelRequest()" class="text-button danger">
+          Отменить приглашение
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #requestChatButton>
+      <div class="actions">
+        <button [disabled]="!!value.currentPartner" mat-raised-button (click)="handleRequest()" class="text-button primary">
+          Пригласить в чат
+        </button>
+      </div>
+    </ng-template>
+  </ng-container>
+</div>

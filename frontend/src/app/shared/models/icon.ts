@@ -1,0 +1,12 @@
+export type Icon = 'settings'
+  | 'settings-active'
+  | 'matches'
+  | 'matches-active'
+  | 'feed-active'
+  | 'feed'
+  | 'link'
+  | 'approve'
+  | 'cancel'
+  | 'like'
+  | 'dislike'
+  | null

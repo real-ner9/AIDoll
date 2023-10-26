@@ -5,6 +5,8 @@ import { Like } from './like.entity';
 import { Dislike } from './dislike.entity';
 import { UserLiked } from './user-liked.entity';
 import { Match } from './match.entity';
+import { Connection } from './connection.entity';
+import { ChatRequest } from './chat-request.entity';
 
 @Entity()
 export class User {
@@ -74,11 +76,34 @@ export class User {
   @OneToMany(() => Match, (match) => match.user)
   matches: Match[];
 
+  @OneToMany(() => Connection, (connection) => connection.user)
+  connections: Connection[];
+
   @Column({ type: 'text', nullable: true })
   username: string;
 
   @Column({ default: false })
   showUsername: boolean;
+
+  @Column({ default: false })
+  online: boolean;
+
+  @Column({ type: 'bigint', nullable: true })
+  lastLoginTimestamp: number;
+
+  /**
+   * Отношение к таблице ChatRequest, где текущий пользователь является отправителем запроса на чат.
+   * Это позволяет получить все запросы на чат, отправленные этим пользователем.
+   */
+  @OneToMany(() => ChatRequest, (chatRequest) => chatRequest.sender)
+  sentRequests: ChatRequest[];
+
+  /**
+   * Отношение к таблице ChatRequest, где текущий пользователь является получателем запроса на чат.
+   * Это позволяет получить все запросы на чат, которые были отправлены этому пользователю.
+   */
+  @OneToMany(() => ChatRequest, (chatRequest) => chatRequest.receiver)
+  receivedRequests: ChatRequest[];
 
   constructor(userId: string) {
     this.userId = userId;
@@ -101,5 +126,6 @@ export class User {
     this.name = null;
     this.username = null;
     this.showUsername = false;
+    this.lastLoginTimestamp = null;
   }
 }

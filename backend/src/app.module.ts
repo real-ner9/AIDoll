@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -11,6 +11,8 @@ import { BotUsersModule } from './bot-users/bot-users.module';
 import { BotChatModule } from './bot-chat/bot-chat.module';
 import { ProfileMatchModule } from './profile-match/profile-match.module';
 import * as process from 'process';
+import { AuthMiddleware } from './auth.middleware';
+import { FileStoreModule } from './file-store/file-store.module';
 
 @Module({
   imports: [
@@ -51,8 +53,13 @@ import * as process from 'process';
     BotUsersModule,
     BotChatModule,
     ProfileMatchModule,
+    FileStoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('*');
+  }
+}

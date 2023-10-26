@@ -7,9 +7,27 @@ import { Like } from './schemas/like.entity';
 import { Dislike } from './schemas/dislike.entity';
 import { UserLiked } from './schemas/user-liked.entity';
 import { Match } from './schemas/match.entity';
+import { UserController } from './user.controller';
+import { UsersWebSocketGateway } from './user-websocket-gateway';
+import { Connection } from './schemas/connection.entity';
+import { ChatRequest } from './schemas/chat-request.entity';
+import { ProfileMatchModule } from '../profile-match/profile-match.module';
+import { FileStoreModule } from '../file-store/file-store.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Like, Dislike, UserLiked, Match])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Like,
+      Dislike,
+      UserLiked,
+      Match,
+      Connection,
+      ChatRequest,
+    ]),
+    ProfileMatchModule,
+    FileStoreModule,
+  ],
   providers: [
     UserService,
     {
@@ -32,8 +50,18 @@ import { Match } from './schemas/match.entity';
       provide: 'MATCH_REPOSITORY',
       useValue: Match,
     },
+    {
+      provide: 'CONNECTION_REPOSITORY',
+      useValue: Connection,
+    },
+    {
+      provide: 'CHAT_REQUEST_REPOSITORY',
+      useValue: ChatRequest,
+    },
     UserActionsService,
+    UsersWebSocketGateway,
   ],
+  controllers: [UserController],
   exports: [UserService, UserActionsService],
 })
 export class BotUsersModule {}

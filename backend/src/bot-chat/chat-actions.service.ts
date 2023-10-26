@@ -6,17 +6,18 @@ import { RoomsService } from './room.service';
 import { UserService } from '../bot-users/user.service';
 import * as cron from 'node-cron';
 import { UserState } from '../bot-users/types/user-state';
+import * as process from 'process';
 
 async function safeExecute(fn: Function, ctx, ...args: any[]) {
   try {
     await fn(ctx, ...args);
   } catch (error) {
     console.error('chat-actions SafeExecute error:', error.message);
-
+    const userId = ctx.from.id.toString();
     ctx
       .reply(
         `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-        this.getFindPartnerKeyboard(),
+        await this.getFindPartnerKeyboard(userId),
       )
       .catch((err) => console.error('chat-actions sageExecute error: ', err));
   }
@@ -54,7 +55,7 @@ export class ChatActionsService {
     this.bot = bot;
 
     cron.schedule(
-      '0 0 16 * * *',
+      '0 30 18 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];
@@ -66,8 +67,8 @@ export class ChatActionsService {
             await this.bot.telegram
               .sendMessage(
                 user.userId,
-                '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
-                this.getFindPartnerKeyboard(),
+                '🌟 Внимание! 🌟\nВ нашем боте появилось новое приложение! Теперь всё стало ещё удобнее и красивее. Заполни свой профиль, добавь фотографию и просто нажми "смотреть анкеты".\nВнутри Telegram откроется приложение, которое выглядит гораздо приятнее, чем предыдущий поиск.\nЕсли обнаружишь ошибки или у тебя есть пожелания к функционалу, пожалуйста, напиши нам сюда: @vinloy\n 🚀🎉',
+                await this.getFindPartnerKeyboard(user.userId),
               )
               .then(async () => {
                 if (user.isBlocked) {
@@ -221,11 +222,12 @@ export class ChatActionsService {
     try {
       await this.messageService.forwardMessage(this.bot, ctx);
     } catch (error) {
+      const userId = ctx.from.id.toString();
       console.error('An error occurred while forwarding a message:', error);
       return ctx
         .reply(
           `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пишите в чат @govirtchat`,
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch((err) => console.error(err));
     }
@@ -273,11 +275,12 @@ export class ChatActionsService {
 
   async onBotStart(ctx): Promise<void> {
     try {
+      const userId = ctx.from.id.toString();
       await this.onEndChat(ctx, false);
       await ctx
         .reply(
           this.i18n.t('events.welcome', { lang: this.lang }),
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.welcome: ', err, ctx);
@@ -289,11 +292,12 @@ export class ChatActionsService {
 
   async onBotRestart(ctx): Promise<void> {
     try {
+      const userId = ctx.from.id.toString();
       await this.onEndChat(ctx, false);
       await ctx
         .reply(
           this.i18n.t('events.botRestarted', { lang: this.lang }),
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.botRestarted: ', err, ctx);
@@ -305,11 +309,12 @@ export class ChatActionsService {
 
   async onHideNotification(ctx): Promise<void> {
     try {
+      const userId = ctx.from.id.toString();
       await this.onEndChat(ctx, false);
       await ctx
         .reply(
           this.i18n.t('events.searchPartner', { lang: this.lang }),
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.searchPartner: ', err, ctx);
@@ -349,7 +354,10 @@ export class ChatActionsService {
       const userId = ctx.from.id.toString();
       await this.userService.setState(userId, UserState.QUICK_SEARCH);
       await ctx
-        .reply('Выбери, чем хочешь заняться', this.getFindPartnerKeyboard())
+        .reply(
+          'Выбери, чем хочешь заняться',
+          await this.getFindPartnerKeyboard(userId),
+        )
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.searchPartner: ', err, ctx);
         });
@@ -360,11 +368,12 @@ export class ChatActionsService {
 
   async onStopSearch(ctx): Promise<void> {
     try {
+      const userId = ctx.from.id.toString();
       await this.onEndChat(ctx, false);
       await ctx
         .reply(
           this.i18n.t('events.stopPartnerSearch', { lang: this.lang }),
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch(async (err, ctx) => {
           await this.handleBotEventError(
@@ -379,7 +388,24 @@ export class ChatActionsService {
     }
   }
 
-  getFindPartnerKeyboard(hideNotificationButton = false): any {
+  async getFindPartnerKeyboard(
+    userId: string,
+    hideNotificationButton = false,
+  ): Promise<any> {
+    const user = await this.userService.getUserFromCacheOrDB(userId);
+
+    let browsingProfilesButton: any = Markup.button.webApp(
+      '📄 Смотреть анкеты',
+      `${process.env.WEB_APP_URL}/feed`,
+    );
+
+    if (!user || !user?.name) {
+      browsingProfilesButton = Markup.button.callback(
+        '📄 Смотреть анкеты',
+        'edit_profile',
+      );
+    }
+
     const buttons = [
       [
         Markup.button.callback(
@@ -387,7 +413,8 @@ export class ChatActionsService {
           'find_partner',
         ),
       ],
-      [Markup.button.callback('📄 Смотреть анкеты', 'browsing_profiles')],
+      // [Markup.button.callback('📄 Смотреть анкеты', 'browsing_profiles')],
+      [browsingProfilesButton],
       [Markup.button.callback('✏️ Редактировать профиль', 'edit_profile')],
     ];
 
@@ -459,12 +486,12 @@ export class ChatActionsService {
             this.i18n.t('events.connectedWithPartner', { lang: this.lang }),
             partnerChatKeyboard,
           )
-          .catch((error) => {
+          .catch(async (error) => {
             console.error('An error:', error.message);
             ctx
               .reply(
                 `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-                this.getFindPartnerKeyboard(),
+                await this.getFindPartnerKeyboard(userId),
               )
               .catch((err) => console.error(err.message));
           });
@@ -535,15 +562,17 @@ export class ChatActionsService {
           .sendMessage(
             partnerId,
             this.i18n.t('events.chatEnded', { lang: this.lang }),
-            this.getFindPartnerKeyboard(),
+            await this.getFindPartnerKeyboard(userId),
           )
           .then()
-          .catch((error) => {
+          .catch(async (error) => {
             console.error('An error:', error.message);
-            ctx.reply(
-              `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
-              this.getFindPartnerKeyboard(),
-            );
+            ctx
+              .reply(
+                `Кажется, что-то пошло не так...\nПо вопросам работы сервиса пиши в чат @govirtchat`,
+                await this.getFindPartnerKeyboard(userId),
+              )
+              .catch((e) => e);
           });
       }
     } catch (e) {
@@ -554,7 +583,7 @@ export class ChatActionsService {
       ctx
         .reply(
           this.i18n.t('events.chatEnded', { lang: this.lang }),
-          this.getFindPartnerKeyboard(),
+          await this.getFindPartnerKeyboard(userId),
         )
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.chatEnded: ', err, ctx);
@@ -613,7 +642,7 @@ export class ChatActionsService {
         .sendMessage(
           userId,
           'Кто-то из тех, кого ты отметил симпатией, начал поиск 😊 Присоединяйся скорей!',
-          this.getFindPartnerKeyboard(true),
+          await this.getFindPartnerKeyboard(userId, true),
         )
         .catch(async (err) => {
           console.error(`notification error`, err.message);

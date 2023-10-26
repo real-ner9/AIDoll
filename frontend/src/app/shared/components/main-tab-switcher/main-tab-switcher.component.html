@@ -1,0 +1,20 @@
+<div class="main-tab-switcher">
+  <nav mat-tab-nav-bar>
+    <a mat-tab-link
+       *ngFor="let link of navLinks"
+       [routerLink]="link.link"
+       routerLinkActive
+       #rla="routerLinkActive"
+       [disabled]="!!link.disabled"
+       [active]="rla.isActive">
+      <div [class.active]="rla.isActive" class="tab-label-container">
+        <span [class.active]="rla.isActive" class="icon-container">
+          <app-icon [icon]="$any(rla.isActive ? link.icon + '-active' : link.icon)"></app-icon>
+        </span>
+        <span class="tab-label tab-label_{{link.labelKey}}">
+          {{ link.label }}
+        </span>
+      </div>
+    </a>
+  </nav>
+</div>

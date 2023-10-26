@@ -3,7 +3,8 @@ import { Markup, Telegraf } from 'telegraf';
 import { UserService } from './user.service';
 import { UserState } from './types/user-state';
 import { UserRole, UserRoleMap } from './types/user-role';
-
+import { FileStoreService } from '../file-store/file-store.service';
+import * as process from 'process';
 async function safeExecute(fn: Function, ctx, ...args: any[]) {
   try {
     await fn(ctx, ...args);
@@ -23,7 +24,10 @@ async function safeExecute(fn: Function, ctx, ...args: any[]) {
 export class UserActionsService {
   bot: Telegraf;
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly fileStoreService: FileStoreService,
+  ) {}
 
   init(bot: Telegraf) {
     this.bot = bot;
@@ -171,6 +175,7 @@ export class UserActionsService {
       const photo = await this.userService.getPhoto(userId);
 
       if (photo) {
+        await this.fileStoreService.deleteFromS3(photo);
         await this.userService.setPhoto(userId, null);
       }
       await this.onEditProfile(ctx);
@@ -217,16 +222,31 @@ export class UserActionsService {
 
       if (user.photoUrl) {
         return await ctx
-          .replyWithPhoto(user.photoUrl, {
+          .replyWithPhoto(`${process.env.S3_URL}/${user.photoUrl}`, {
             reply_markup: keyboard.reply_markup,
             caption: captionText,
           })
           .catch(async (err) => {
-            await this.handleBotEventError(
-              'onEditProfile ctx error:  ',
-              err,
-              ctx,
-            );
+            if (
+              err.message ===
+              '400: Bad Request: wrong file identifier/HTTP URL specified'
+            ) {
+              try {
+                await this.userService.setPhoto(userId, null);
+                await this.onEditProfile(ctx);
+              } catch (e) {
+                console.error(
+                  'failed to get HTTP URL content error',
+                  e.message,
+                );
+              }
+            } else {
+              await this.handleBotEventError(
+                'onEditProfile ctx error:  ',
+                err,
+                ctx,
+              );
+            }
           });
       }
 
@@ -465,9 +485,19 @@ export class UserActionsService {
 
     try {
       if ((photo && Array.isArray(photo)) || withoutPhoto) {
-        if (photo?.[0]) {
-          await this.userService.setPhoto(userId, photo[0].file_id);
+        const user = await this.userService.getUserFromCacheOrDB(userId);
+        const biggestPhoto = photo[photo.length - 1];
+        const fileLink = await ctx.telegram.getFileLink(biggestPhoto.file_id);
+        const response = await fetch(fileLink);
+        const data = await response.arrayBuffer();
+        const buffer = Buffer.from(data);
+
+        if (user.photoUrl) {
+          await this.fileStoreService.deleteFromS3(user.photoUrl);
+          await this.userService.setPhoto(userId, null);
         }
+        const s3Url = await this.fileStoreService.uploadToS3(buffer);
+        await this.userService.setPhoto(userId, s3Url);
 
         const isVisible = await this.userService.getProfileVisible(userId);
         if (!isVisible) {

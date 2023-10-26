@@ -1,2 +1,10 @@
-<router-outlet></router-outlet>
-<div>Tabs: matches, likes, browsing, profile</div>
+<ng-container *ngIf="!error; else errorBlock">
+  <app-main-tab-switcher></app-main-tab-switcher>
+  <router-outlet></router-outlet>
+</ng-container>
+<ng-template #errorBlock>
+  Упс, ты не авторизовался <br>
+  {{ error }}
+</ng-template>
+
+

@@ -1,0 +1,11 @@
+<div class="items" *ngIf="(feed$ | async) as items" waIntersectionObserver>
+  <app-feed-list-item
+    page="feed"
+    *ngFor="let item of items; let i = index"
+    [value]="item"
+    (like)="onLike($event)"
+    (dislike)="onDislike($event)"
+    (waIntersectionObservee)="onIntersection($event, i, items.length)">
+  </app-feed-list-item>
+</div>
+<app-background-for-switcher></app-background-for-switcher>
