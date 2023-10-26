@@ -41,7 +41,7 @@ services:
       dockerfile: Dockerfile
     container_name: go_to_virt_frontend
     volumes:
-      - frontend-dist:/usr/share/nginx/html
+      - ../../frontend/dist/frontend:/usr/share/nginx/html
     networks:
       - go_to_virt
 

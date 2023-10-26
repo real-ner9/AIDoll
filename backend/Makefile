@@ -16,6 +16,10 @@ redeploy:
 	docker compose -f ./docker/docker-compose.yml up -d
 
 up:
+	# Сборка Angular приложения
+	cd ../frontend && npm ci && npm run build --prod
+
+	# Запуск контейнеров
 	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose -f ./docker/docker-compose.yml up -d --build --remove-orphans
 
 down:
