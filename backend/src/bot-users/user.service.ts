@@ -49,6 +49,10 @@ export class UserService {
     @InjectRepository(ChatRequest)
     private readonly chatRequestRepository: Repository<ChatRequest>,
   ) {
+    setTimeout(async () => {
+      await this.clearConnections();
+    });
+
     setInterval(async () => {
       this.invalidateCache();
       try {
@@ -61,6 +65,14 @@ export class UserService {
         );
       }
     }, this.deleteDelay);
+  }
+
+  private async clearConnections() {
+    try {
+      await this.connectionRepository.clear();
+    } catch (error) {
+      console.error('Error clearing connections table:', error.message);
+    }
   }
 
   private async removePastPartners(): Promise<void> {
@@ -97,7 +109,7 @@ export class UserService {
     if (user) {
       this.updateCache(user);
     }
-    return user;
+    return user || null;
   }
 
   async setActiveRoom(userId: string, roomId: string): Promise<void> {
@@ -1126,10 +1138,14 @@ export class UserService {
         now - user.lastLoginTimestamp > debounce
       ) {
         user.lastLoginTimestamp = now;
-
-        await this.userRepository.save(user);
-        this.updateCache(user);
       }
+
+      if (user.isBlocked) {
+        user.isBlocked = false;
+      }
+
+      await this.userRepository.save(user);
+      this.updateCache(user);
     }
   }
 }
