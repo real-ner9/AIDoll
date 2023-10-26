@@ -68,20 +68,18 @@ export class ProfileMatchActionsService {
       const partnerKeyboard = hasPartnerLikedUser
         ? [
             [
-              // Markup.button.webApp(
-              //   'Перейти в чат',
-              //   `${process.env.WEB_APP_URL}/matches/requests`,
-              // ),
-              Markup.button.url('Перейти в чат', process.env.WEB_APP_URL),
+              Markup.button.webApp(
+                'Перейти в чат',
+                `${process.env.WEB_APP_URL}/matches/requests`,
+              ),
             ],
           ]
         : [
             [
-              // Markup.button.webApp(
-              //   'Смотреть лайки',
-              //   `${process.env.WEB_APP_URL}/feed/likes`,
-              // ),
-              Markup.button.url('Смотреть лайки', process.env.WEB_APP_URL),
+              Markup.button.webApp(
+                'Смотреть лайки',
+                `${process.env.WEB_APP_URL}/feed/likes`,
+              ),
             ],
           ];
       await this.bot.telegram
@@ -104,18 +102,16 @@ export class ProfileMatchActionsService {
     try {
       const partnerKeyboard = [
         [
-          // Markup.button.webApp(
-          //   'Перейти в чат',
-          //   `${process.env.WEB_APP_URL}/matches/requests`,
-          // ),
-          Markup.button.url('Перейти в чат', process.env.WEB_APP_URL),
+          Markup.button.webApp(
+            'Перейти в чат',
+            `${process.env.WEB_APP_URL}/matches/requests`,
+          ),
         ],
         [
-          // Markup.button.webApp(
-          //   'Заблокировать',
-          //   `${process.env.WEB_APP_URL}/matches/requests`,
-          // ),
-          // Markup.button.url('📄 Смотреть анкеты', process.env.WEB_APP_URL),
+          Markup.button.webApp(
+            'Заблокировать',
+            `${process.env.WEB_APP_URL}/matches/requests`,
+          ),
         ],
       ];
       const userImageUrlToSend = `${process.env.S3_URL}/${
