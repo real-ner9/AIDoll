@@ -1,4 +1,4 @@
-rebuild-frontend:
+rebuild:
     # Останавливаем и удаляем контейнеры
     docker compose -f ./docker/docker-compose.yml down
 
