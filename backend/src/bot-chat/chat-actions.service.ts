@@ -55,7 +55,7 @@ export class ChatActionsService {
     this.bot = bot;
 
     cron.schedule(
-      '0 30 20 * * *',
+      '0 55 19 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];

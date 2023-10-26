@@ -16,7 +16,7 @@ import * as process from 'process';
 @WebSocketGateway({
   namespace: '/api/user',
 
-  cors: { origin: process.env.IS_PROD ? null : '*', credentials: true },
+  cors: { origin: '*', credentials: true },
 })
 export class UsersWebSocketGateway
   implements OnGatewayConnection, OnGatewayDisconnect
