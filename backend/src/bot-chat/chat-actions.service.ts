@@ -399,6 +399,11 @@ export class ChatActionsService {
       `${process.env.WEB_APP_URL}/feed`,
     );
 
+    browsingProfilesButton = Markup.button.url(
+      '📄 Смотреть анкеты',
+      process.env.WEB_APP_URL,
+    );
+
     if (!user || !user?.name) {
       browsingProfilesButton = Markup.button.callback(
         '📄 Смотреть анкеты',
