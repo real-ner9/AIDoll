@@ -96,6 +96,20 @@ export class ChatActionsService {
       },
     );
 
+    cron.schedule(
+      '0 59 * * * *',
+      async () => {
+        try {
+          await this.userService.checkAndClearConnections();
+        } catch (error) {
+          console.error('Error in the cron job:', error.message);
+        }
+      },
+      {
+        timezone: 'Europe/Moscow',
+      },
+    );
+
     this.bot.catch(async (err, ctx) => {
       await this.handleBotEventError('bot error', err, ctx);
     });

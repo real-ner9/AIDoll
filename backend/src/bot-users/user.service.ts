@@ -75,6 +75,30 @@ export class UserService {
     }
   }
 
+  async checkAndClearConnections() {
+    const fortyFiveMinutesAgo = Date.now() - 45 * 60 * 1000;
+
+    await this.connectionRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Connection)
+      .where(
+        '"user_id" IN (SELECT "userId" FROM "user" WHERE "online" = :online AND "lastLoginTimestamp" < :timeLimit)',
+        { online: true, timeLimit: fortyFiveMinutesAgo },
+      )
+      .execute();
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update(User)
+      .set({ online: false })
+      .where('online = :online', { online: true })
+      .andWhere('lastLoginTimestamp < :timeLimit', {
+        timeLimit: fortyFiveMinutesAgo,
+      })
+      .execute();
+  }
+
   private async removePastPartners(): Promise<void> {
     const now = Date.now();
     const oneDay = this.deleteDelay;
