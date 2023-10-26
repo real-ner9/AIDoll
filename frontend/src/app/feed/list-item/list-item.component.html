@@ -17,7 +17,7 @@
     {{ value.description }}
   </div>
   <div class="image" *ngIf="value.photoUrl">
-    <img src="{{ 'image_2021-03-14_23-22-02.png' | photoUrl }}" alt="Фотография с {{ value.name }}">
+    <img src="{{ value.photoUrl | photoUrl }}" alt="Фотография с {{ value.name }}">
   </div>
   <div class="actions">
     <button [disabled]="likedUser.has(value.id)" mat-raised-button (click)="handleDislike(value)" class="icon-button">

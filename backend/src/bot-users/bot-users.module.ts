@@ -12,6 +12,7 @@ import { UsersWebSocketGateway } from './user-websocket-gateway';
 import { Connection } from './schemas/connection.entity';
 import { ChatRequest } from './schemas/chat-request.entity';
 import { ProfileMatchModule } from '../profile-match/profile-match.module';
+import { FileStoreModule } from '../file-store/file-store.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ProfileMatchModule } from '../profile-match/profile-match.module';
       ChatRequest,
     ]),
     ProfileMatchModule,
+    FileStoreModule,
   ],
   providers: [
     UserService,
