@@ -8,7 +8,7 @@ export class HttpInterceptorService implements HttpInterceptor {
   constructor() { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const authData = localStorage.getItem('authData');
+    const authData = sessionStorage.getItem('authData');
     if (authData) {
       const authReq = req.clone({
         headers: req.headers.set('Authorization', `twa-init-data ${authData}`),

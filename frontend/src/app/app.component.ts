@@ -28,7 +28,7 @@ export class AppComponent implements OnDestroy {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const initDataString = params.get('tgWebAppData');
     const initData = new URLSearchParams(initDataString as any);
-    const user = initData.get('user') || localStorage.getItem('user');
+    const user = initData.get('user') || sessionStorage.getItem('user');
 
     if (user) {
       this.user = JSON.parse(user);
@@ -70,10 +70,10 @@ export class AppComponent implements OnDestroy {
       const initData = new URLSearchParams(initDataString);
       const hash = initData.get('hash');
       if (hash) {
-        localStorage.setItem('authData', initDataString);
+        sessionStorage.setItem('authData', initDataString);
         const userData = initData.get('user');
         if (userData) {
-          localStorage.setItem('user', userData)
+          sessionStorage.setItem('user', userData)
         }
       }
     }
