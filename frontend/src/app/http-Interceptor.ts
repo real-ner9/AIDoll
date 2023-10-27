@@ -1,14 +1,17 @@
 import { Injectable } from '@angular/core';
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable()
 export class HttpInterceptorService implements HttpInterceptor {
 
-  constructor() { }
+  constructor(
+    private readonly cookieService: CookieService,
+  ) { }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const authData = sessionStorage.getItem('authData');
+    const authData = this.cookieService.get('authData');
     if (authData) {
       const authReq = req.clone({
         headers: req.headers.set('Authorization', `twa-init-data ${authData}`),

@@ -13,6 +13,7 @@ import { routerReducer, StoreRouterConnectingModule } from '@ngrx/router-store';
 import { EffectsModule } from '@ngrx/effects';
 import { IntersectionObserverModule } from '@ng-web-apis/intersection-observer';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import {CookieService} from 'ngx-cookie-service';
 
 declare global {
   interface Window {
@@ -55,7 +56,8 @@ declare global {
       provide: HTTP_INTERCEPTORS,
       useClass: HttpInterceptorService,
       multi: true
-    }
+    },
+    CookieService,
   ],
   bootstrap: [AppComponent]
 })

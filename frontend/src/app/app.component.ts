@@ -3,7 +3,8 @@ import { UserService } from './shared/services/user.service';
 import { SocketService } from './shared/services/user-socket.service';
 import { Subject, take, takeUntil } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-root',
@@ -24,11 +25,12 @@ export class AppComponent implements OnDestroy {
     private readonly socketUserService: SocketService,
     private _snackBar: MatSnackBar,
     private readonly router: Router,
+    private readonly cookieService: CookieService,
   ) {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const initDataString = params.get('tgWebAppData');
     const initData = new URLSearchParams(initDataString as any);
-    const user = initData.get('user') || sessionStorage.getItem('user');
+    const user = initData.get('user') || this.cookieService.get('user');
 
     if (user) {
       this.user = JSON.parse(user);
@@ -70,10 +72,10 @@ export class AppComponent implements OnDestroy {
       const initData = new URLSearchParams(initDataString);
       const hash = initData.get('hash');
       if (hash) {
-        sessionStorage.setItem('authData', initDataString);
+        this.cookieService.set('authData', initDataString);
         const userData = initData.get('user');
         if (userData) {
-          sessionStorage.setItem('user', userData)
+          this.cookieService.set('user', userData)
         }
       }
     }

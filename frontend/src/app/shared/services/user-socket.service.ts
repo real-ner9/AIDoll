@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DefaultEventsMap } from '@socket.io/component-emitter';
 import { User } from '../models/user';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,8 +13,10 @@ export class SocketService {
   private socket: Socket<DefaultEventsMap, DefaultEventsMap>;
   private path = 'user'
 
-  constructor() {
-    const authData = sessionStorage.getItem('authData');
+  constructor(
+    private readonly cookieService: CookieService,
+  ) {
+    const authData = this.cookieService.get('authData');
 
     this.socket = io(`${environment.socketUrl}/${this.path}`, { query: { authData }});
   }
