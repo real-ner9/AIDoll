@@ -56,7 +56,7 @@ export class ChatActionsService {
     this.bot = bot;
 
     cron.schedule(
-      '0 0 16 * * *',
+      '0 15 2 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];
@@ -68,7 +68,7 @@ export class ChatActionsService {
             await this.bot.telegram
               .sendMessage(
                 user.userId,
-                '🌟 Внимание! 🌟\nВ нашем боте появилось новое приложение! Теперь всё стало ещё удобнее и красивее. Заполни свой профиль, добавь фотографию и просто нажми "смотреть анкеты".\nВнутри Telegram откроется приложение, которое выглядит гораздо приятнее, чем предыдущий поиск.\nЕсли обнаружишь ошибки или у тебя есть пожелания к функционалу, пожалуйста, напиши нам сюда: @vinloy\n 🚀🎉',
+                '🔞 Для создания анкеты: убедитесь, что вам 18+, избегайте недопустимого контента. Защитите свои интимные фото стикерами или размытием. Подробные правила здесь https://telegra.ph/Pravila-sozdaniya-ankety-v-GoToVirtBot-10-28. 🌟🚀🎉',
                 await this.getFindPartnerKeyboard(user.userId),
               )
               .then(async () => {
