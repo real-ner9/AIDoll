@@ -1,4 +1,5 @@
 import { UserRole } from './user-role';
+import { ComplaintType } from './complaint';
 
 export interface User {
   activeRoom?: string;
@@ -19,4 +20,6 @@ export interface User {
   username?: string;
   showUsername?: boolean;
   online?: boolean;
+  blockedUntil?: Date | string;
+  blockReason?: ComplaintType;
 }

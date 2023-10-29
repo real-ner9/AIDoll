@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Page } from '../models/page';
 import { Match } from '../models/match';
 import { User } from '../models/user';
+import { ComplaintType } from '../models/complaint';
 
 @Injectable({
   providedIn: 'root',
@@ -14,7 +15,7 @@ export class UserService {
   }
 
   authorize() {
-    return this.http.get(`${this.path}/authorize`, {
+    return this.http.get<User>(`${this.path}/authorize`, {
       observe: 'body',
       responseType: 'json',
     },);
@@ -53,6 +54,34 @@ export class UserService {
         pageSize: params.pageSize || 10,
         pageNumber: params.pageNumber || 1,
       },
+    });
+  }
+
+  blockUser(blockedUserId: number) {
+    return this.http.post<{ id: number }>(`${this.path}/block`, {
+      blockedUserId: blockedUserId
+    }, {
+      observe: 'body',
+      responseType: 'json',
+    });
+  }
+
+  reportUser(reportedUserId: number, reason: ComplaintType) {
+    return this.http.post<{ id: number }>(`${this.path}/complain`, {
+      reportedUserId: reportedUserId,
+      reason: reason
+    }, {
+      observe: 'body',
+      responseType: 'json',
+    });
+  }
+
+  removeMatch(removedUserId: number) {
+    return this.http.post<{ id: number }>(`${this.path}/removeMatch`, {
+      removedUserId: removedUserId
+    }, {
+      observe: 'body',
+      responseType: 'json',
     });
   }
 }

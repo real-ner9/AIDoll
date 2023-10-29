@@ -6,6 +6,8 @@ import { CommonModule } from '@angular/common';
 import { IconComponent } from './components/icon/icon.component';
 import { BackgroundForSwitcherComponent } from './components/background-for-switcher/background-for-switcher.component';
 import { PhotoUrlPipe } from './pipes/photo-url.pipe';
+import { EffectsModule } from '@ngrx/effects';
+import { UserEffects } from './store/user.effects';
 
 @NgModule({
   declarations: [
@@ -26,6 +28,7 @@ import { PhotoUrlPipe } from './pipes/photo-url.pipe';
     CommonModule,
     RouterLink,
     RouterLinkActive,
+    EffectsModule.forFeature([UserEffects]),
   ]
 })
 export class SharedModule { }

@@ -131,7 +131,8 @@ export class UserService {
     this.userCache = {};
   }
 
-  async getUserFromCacheOrDB(userId: string): Promise<User | null> {
+  async getUserFromCacheOrDB(userId: string | number): Promise<User | null> {
+    userId = `${userId}`;
     if (this.userCache[userId]) {
       return this.userCache[userId];
     }
@@ -418,7 +419,7 @@ export class UserService {
   async addDislike(userId: string, partnerId: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { userId },
-      relations: ['dislikes', 'likes'],
+      relations: ['dislikes', 'likes', 'sentRequests'],
     });
     if (!user) return;
 
@@ -428,6 +429,16 @@ export class UserService {
     );
     if (existingLike) {
       await this.likeRepository.remove(existingLike);
+    }
+
+    const existingChatRequest = await this.chatRequestRepository.findOne({
+      where: {
+        sender: { userId },
+        receiver: { userId: partnerId },
+      },
+    });
+    if (existingChatRequest) {
+      await this.chatRequestRepository.remove(existingChatRequest);
     }
 
     // Добавляем partnerId в dislikes, если его там нет
@@ -1078,8 +1089,6 @@ export class UserService {
     // Получение общего количества пользователей, которые лайкнули текущего пользователя
     const total = await baseQuery.getCount();
 
-    console.log(users);
-
     // Возвращение пользователей вместе с пагинационной информацией
     return paginate<User>({
       list: users,
@@ -1252,7 +1261,7 @@ export class UserService {
 
     // Проверка, существует ли уже блокировка между этими двумя пользователями
     const existingBlock = await this.blockRepository.findOne({
-      where: { user: { id: user.id }, blockedUserId: `${blockedUserId}` },
+      where: { user: { id: user.id }, blockedUserId: `${partner.userId}` },
     });
 
     if (existingBlock) {
@@ -1261,7 +1270,9 @@ export class UserService {
 
     // Создание новой блокировки
     const block = new UserBlock(user, `${partner.userId}`);
-    return await this.blockRepository.save(block);
+    await this.blockRepository.save(block);
+
+    return { id: partner.id };
   }
 
   async reportUser(
@@ -1286,26 +1297,41 @@ export class UserService {
 
     // id для бана, это нужно будет переделывать потом, но пока так
     if (
-      user.id === 719307698 ||
-      user.id === 6433634025 ||
-      user.id === 499387702
+      user.userId === '719307698' ||
+      user.userId === '6433634025' ||
+      user.userId === '499387702'
     ) {
       if (reason === ComplaintType.AGE_VIOLATION) {
-        await this.fileStoreService.deleteFromS3(partner.photoUrl);
-        await this.setPhoto(partner.userId, null);
+        if (partner.photoUrl) {
+          await this.fileStoreService.deleteFromS3(partner.photoUrl);
+          await this.setPhoto(partner.userId, null);
+        }
+
         await this.banUser(partner.userId, reason);
       }
 
-      if (reason === ComplaintType.UNACCEPTABLE_CONTENT) {
+      if (reason === ComplaintType.UNACCEPTABLE_CONTENT && user.photoUrl) {
         await this.fileStoreService.deleteFromS3(partner.photoUrl);
         await this.setPhoto(partner.userId, null);
       }
+    } else {
+      // Проверка, существует ли уже жалоба между этими двумя пользователями
+      const existingComplaint = await this.complaintRepository.findOne({
+        where: { user: { id: user.id }, reportedUserId: `${partner.userId}` },
+      });
+
+      if (existingComplaint) {
+        throw new Error(
+          'This user has already been blocked by the current user',
+        );
+      }
+
+      const complaint = new UserComplaint(user, `${partner.userId}`, reason);
+      await this.complaintRepository.save(complaint);
+      await this.setBlockByUser(userId, reportedUserId);
     }
 
-    await this.setBlockByUser(userId, reportedUserId);
-
-    const complaint = new UserComplaint(user, `${partner.userId}`, reason);
-    return await this.complaintRepository.save(complaint);
+    return { id: partner.id };
   }
 
   async removeMatch(userId: string | number, removedUserId: number) {
@@ -1325,7 +1351,8 @@ export class UserService {
     }
 
     await this.addDislike(user.userId, partner.userId);
-    return await this.addDislike(partner.userId, user.userId);
+    await this.addDislike(partner.userId, user.userId);
+    return { id: partner.id };
   }
 
   async unbanUser(userId: string | number): Promise<void> {

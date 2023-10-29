@@ -8,7 +8,7 @@ import {
 } from './requests.actions';
 import { User } from '../../../shared/models/user';
 import { matchRequestCanceled, matchRequested } from '../../match-list/store/matches.actions';
-import { Match } from '../../../shared/models/match';
+import { blockUserSuccess, removeMatchSuccess, reportUserSuccess } from '../../../shared/store/user.actions';
 
 export interface RequestsState {
   requests: User[];
@@ -28,6 +28,15 @@ export const requestsReducer = createReducer(
   on(loadRequestsSuccess, (state, { requests }) => ({ ...state, requests: [...requests.content], loading: false })),
   on(clearRequests, (state) => ({ ...state, requests: [], loading: false })),
   on(loadRequestsFailure, (state, { error }) => ({ ...state, error, loading: false })),
+  on(
+    removeMatchSuccess,
+    blockUserSuccess,
+    reportUserSuccess,
+    (state, { id }) => ({
+      ...state,
+      requests: state.requests.filter(request => request.id !== id)
+    })
+  ),
   on(addRequest, (state, { request }) => ({ ...state, requests: [...state.requests, request] })),
   on(cancelRequest, (state, { requestId }) => ({
     ...state,

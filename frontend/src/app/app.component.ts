@@ -5,6 +5,7 @@ import { Subject, take, takeUntil } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
+import { ComplaintType, ComplaintTypeMap } from './shared/models/complaint';
 
 @Component({
   selector: 'app-root',
@@ -38,10 +39,15 @@ export class AppComponent implements OnDestroy {
 
     this.updateTelegramData();
 
-    this.userService.authorize().pipe(take(1)).subscribe(
-      response => console.log('response: ', response),
+    this.userService.authorize()
+      .pipe(take(1))
+      .subscribe(
+      response => {
+        if (response.blockReason) {
+          this.error = `Вы не можете пользоваться приложением по причине: ${ComplaintTypeMap?.[response.blockReason] || ComplaintTypeMap[ComplaintType.OFFENSIVE_BEHAVIOR]}`
+        }
+      },
       error => {
-        console.log(error);
         this.error = error.error.reason
       },
     );

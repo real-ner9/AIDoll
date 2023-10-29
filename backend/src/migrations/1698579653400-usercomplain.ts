@@ -11,7 +11,7 @@ export class Usercomplain1698579653400 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
-        name: 'user-complaint',
+        name: 'user_complaint_entity',
         columns: [
           {
             name: 'id',
@@ -40,7 +40,7 @@ export class Usercomplain1698579653400 implements MigrationInterface {
     );
 
     await queryRunner.createForeignKey(
-      'user-complaint',
+      'user_complaint_entity',
       new TableForeignKey({
         columnNames: ['user_id'],
         referencedColumnNames: ['userId'],
@@ -50,13 +50,13 @@ export class Usercomplain1698579653400 implements MigrationInterface {
     );
 
     await queryRunner.createIndex(
-      'user-complaint',
+      'user_complaint_entity',
       new TableIndex({ name: 'IDX_USER_COMPLAINT', columnNames: ['user_id'] }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropIndex('user-complaint', 'IDX_USER_COMPLAINT');
-    await queryRunner.dropTable('user-complaint');
+    await queryRunner.dropIndex('user_complaint_entity', 'IDX_USER_COMPLAINT');
+    await queryRunner.dropTable('user_complaint_entity');
   }
 }

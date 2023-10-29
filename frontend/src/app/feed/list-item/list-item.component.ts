@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { User } from '../../shared/models/user';
 import { UserRoleMap } from '../../shared/models/user-role';
+import { ComplaintTypeMap, ComplaintType } from '../../shared/models/complaint';
+import { UserFacade } from '../../shared/store/user.facade';
 
 
 @Component({
@@ -18,6 +20,13 @@ export class ListItemComponent {
   likedUser: Set<number> = new Set()
 
   protected UserRoleMap = UserRoleMap;
+  protected readonly ComplaintType = ComplaintType;
+  complaints = Object.keys(ComplaintTypeMap).map((complaint) => ({
+    label: ComplaintTypeMap[complaint as ComplaintType],
+    value: complaint as ComplaintType,
+  }))
+
+  constructor(private readonly userFacade: UserFacade) {}
 
   handleDislike(user: User) {
     this.likedUser.add(user.id);
@@ -27,5 +36,14 @@ export class ListItemComponent {
   handleLike(user: User) {
     this.likedUser.add(user.id);
     this.like.emit(user.id);
+  }
+
+  onReport(complaint: ComplaintType) {
+    this.value?.id && this.userFacade.reportUser(this.value.id, complaint);
+    this.value && this.likedUser.add(this.value.id);
+  }
+  onBlockUser() {
+    this.value?.id && this.userFacade.blockUser(this.value.id);
+    this.value && this.likedUser.add(this.value.id);
   }
 }

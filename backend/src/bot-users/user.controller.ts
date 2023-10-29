@@ -21,7 +21,7 @@ export class UserController {
       const authString = req.headers['authorization'];
       const { id } = this.getUser(authString);
       await this.userService.setLastLoginTimestamp(id);
-      return JSON.stringify({ status: 'COMPLETE' });
+      return this.userService.getUserFromCacheOrDB(id);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }

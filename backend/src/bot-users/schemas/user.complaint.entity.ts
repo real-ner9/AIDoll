@@ -16,7 +16,7 @@ export enum ComplaintType {
   AGE_VIOLATION = 'AGE_VIOLATION',
 }
 
-@Entity()
+@Entity('user_complaint_entity')
 export class UserComplaint {
   @PrimaryGeneratedColumn()
   id: number;

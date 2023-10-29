@@ -7,6 +7,7 @@ import {
   removeMatch, requestMatch, cancelRequestMatch, matchRequested, matchRequestCanceled, requestCanceled, clearMatches
 } from './matches.actions';
 import { Match } from '../../../shared/models/match';
+import { blockUserSuccess, removeMatchSuccess, reportUserSuccess } from '../../../shared/store/user.actions';
 
 export interface MatchesState {
   matches: Match[];
@@ -30,6 +31,15 @@ export const matchesReducer = createReducer(
     ...state,
     matches: hasPartnerLikedUser ? [match, ...state.matches] : state.matches,
   })),
+  on(
+    removeMatchSuccess,
+    blockUserSuccess,
+    reportUserSuccess,
+    (state, { id }) => ({
+      ...state,
+      matches: state.matches.filter(match => match.id !== id)
+    })
+  ),
   on(removeMatch, (state, { matchId }) => ({
     ...state,
     matches: state.matches.filter(match => match.id !== matchId)
