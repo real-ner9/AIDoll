@@ -20,8 +20,14 @@ export class UserController {
     try {
       const authString = req.headers['authorization'];
       const { id } = this.getUser(authString);
+      const user = await this.userService.getUserFromCacheOrDB(id);
       await this.userService.setLastLoginTimestamp(id);
-      return this.userService.getUserFromCacheOrDB(id);
+
+      if (!user.isVisibleToOthers) {
+        await this.userService.setProfileVisible(user.userId, true);
+      }
+
+      return user;
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
