@@ -56,7 +56,7 @@ export class ChatActionsService {
     this.bot = bot;
 
     cron.schedule(
-      '0 0 16 * * *',
+      '0 0 20 * * *',
       async () => {
         const activeUsers = await this.userService.getAllActiveUsers();
         const blockedUsers: string[] = [];
@@ -68,7 +68,12 @@ export class ChatActionsService {
             await this.bot.telegram
               .sendMessage(
                 user.userId,
-                '🌆 Вечер наступил, и мы так заждались тебя! Самое время завести интересный разговор в нашем чате. 🥳🌟',
+                '🎉 Сейчас у нас проходит конкурс! 🎉\n' +
+                  'Поделись ссылкой на наше приложение и приведи новых друзей. \n29 ноября один из участников получит 10 000 рублей! 💰\n' +
+                  'За каждого приведенного пользователя твой шанс на выигрыш растет! 📈\n' +
+                  'Бонус: анкеты участников конкурса получат приоритет в поиске у других пользователей! 🌟\n' +
+                  'Не упусти свой шанс стать победителем! 🏆\n' +
+                  `Вот твоя уникальная ссылка https://t.me/gotovirtbot?start=${user.userId}`,
                 await this.getFindPartnerKeyboard(user.userId),
               )
               .then(async () => {
@@ -301,6 +306,13 @@ export class ChatActionsService {
         .catch(async (err, ctx) => {
           await this.handleBotEventError('events.welcome: ', err, ctx);
         });
+
+      const messageText = ctx.message.text;
+      if (messageText.includes('/start')) {
+        const inviterId = messageText.split('/start')[1]?.trim() || null;
+
+        await this.userService.addInvitation(userId, inviterId);
+      }
     } catch (e) {
       console.error('onBotStart error', e.message);
     }

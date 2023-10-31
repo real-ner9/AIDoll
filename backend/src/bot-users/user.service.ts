@@ -13,6 +13,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { UserBlock } from './schemas/user-block.entity';
 import { ComplaintType, UserComplaint } from './schemas/user.complaint.entity';
 import { FileStoreService } from '../file-store/file-store.service';
+import { InvitationLink } from './schemas/invitation-link.entity';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -55,6 +56,8 @@ export class UserService {
     private readonly blockRepository: Repository<UserBlock>,
     @InjectRepository(UserComplaint)
     private readonly complaintRepository: Repository<UserComplaint>,
+    @InjectRepository(InvitationLink)
+    private readonly invitationRepository: Repository<InvitationLink>,
     private readonly fileStoreService: FileStoreService,
   ) {
     setTimeout(async () => {
@@ -1382,5 +1385,39 @@ export class UserService {
 
     await this.userRepository.save(user);
     this.updateCache(user);
+  }
+
+  async addInvitation(
+    userId: string,
+    inviterId: string,
+  ): Promise<{ message: string }> {
+    const user = await this.getUserFromCacheOrDB(userId);
+    const inviter = await this.getUserFromCacheOrDB(inviterId);
+
+    if (userId === inviterId) {
+      return { message: 'Один и тот же пользователь' };
+    }
+
+    if (!user || !inviter) {
+      return { message: 'Пользователей не существует' };
+    }
+
+    if (user.name) {
+      return { message: 'Пользователь уже существует' };
+    }
+
+    const existingInvite = this.invitationRepository.findOne({
+      where: { invitedUserId: userId },
+    });
+
+    if (existingInvite) {
+      return { message: 'Пользователя уже кто-то пригласил' };
+    }
+
+    const newInvite = new InvitationLink(inviterId, userId);
+
+    await this.invitationRepository.save(newInvite);
+
+    return { message: 'Инвайт добавлен' };
   }
 }

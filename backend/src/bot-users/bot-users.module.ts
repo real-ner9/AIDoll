@@ -15,6 +15,7 @@ import { ProfileMatchModule } from '../profile-match/profile-match.module';
 import { FileStoreModule } from '../file-store/file-store.module';
 import { UserBlock } from './schemas/user-block.entity';
 import { UserComplaint } from './schemas/user.complaint.entity';
+import { InvitationLink } from './schemas/invitation-link.entity';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { UserComplaint } from './schemas/user.complaint.entity';
       ChatRequest,
       UserBlock,
       UserComplaint,
+      InvitationLink,
     ]),
     ProfileMatchModule,
     FileStoreModule,
@@ -69,6 +71,10 @@ import { UserComplaint } from './schemas/user.complaint.entity';
     {
       provide: 'USER_COMPLAINT_REPOSITORY',
       useValue: UserComplaint,
+    },
+    {
+      provide: 'INVITATION_LINK_REPOSITORY',
+      useValue: InvitationLink,
     },
     UserActionsService,
     UsersWebSocketGateway,
