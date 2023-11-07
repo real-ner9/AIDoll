@@ -30,6 +30,9 @@
     <mat-chip *ngIf="value.dateOfBirth">
       {{ value.dateOfBirth | age }}
     </mat-chip>
+    <mat-chip *ngIf="!value.dateOfBirth && value.age">
+      {{ value.age }}
+    </mat-chip>
     <mat-chip color="primary" *ngIf="value.role">
       {{ UserRoleMap[value.role] || value.role }}
     </mat-chip>

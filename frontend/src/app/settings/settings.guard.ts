@@ -47,7 +47,7 @@ export class SettingsGuard implements CanDeactivate<unknown>, OnDestroy {
   canDeactivate(
     component: UnsavedForm,
   ): Observable<boolean> | boolean {
-    if (this.user && (!this.user.description || !this.user.name || !this.user.role)) {
+    if (this.user && (!this.user.description || !this.user.name || !this.user.role || !this.user.dateOfBirth)) {
       alert("Заполни недостающие поля своей анкеты");
       return false;
     }
