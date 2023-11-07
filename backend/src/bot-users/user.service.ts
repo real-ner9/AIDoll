@@ -518,6 +518,8 @@ export class UserService {
         enableNotification: true,
         activeRoom: null,
         currentPartner: null,
+        isBlocked: false,
+        blockReason: null,
       },
     });
   }
