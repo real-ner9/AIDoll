@@ -67,6 +67,26 @@ export class AppComponent implements OnDestroy {
             .subscribe(() => {
               snackbarRef.dismiss();
             });
+
+          return;
+        }
+
+        if (!response.isVisibleToOthers) {
+          this.router.navigate(['/settings']);
+
+          const snackbarRef = this._snackBar.open(
+            'Прежде чем смотреть на других, сделай свою анкету видимой в ленте','ок',
+            { duration: AppComponent.SNACKBAR_DURATION }
+          );
+
+          snackbarRef
+            .onAction()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+              snackbarRef.dismiss();
+            });
+
+          return;
         }
       },
       error => {

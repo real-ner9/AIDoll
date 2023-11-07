@@ -52,6 +52,11 @@ export class SettingsGuard implements CanDeactivate<unknown>, OnDestroy {
       return false;
     }
 
+    if (this.user && !this.user.isVisibleToOthers) {
+      alert("Прежде чем смотреть на других, сделай свою анкету видимой в ленте");
+      return false;
+    }
+
     if(component.hasUnsavedChanges) {
       return confirm("Внесенные изменения не будут сохранены. Продолжить?");
     }

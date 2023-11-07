@@ -25,8 +25,8 @@ export function applyDtoToForm(form: SettingsFormGroup, dto: Settings | User): S
     description: dto.description || null,
     photoUrls: dto.photoUrl ? [dto.photoUrl] : [],
     role: dto.role || null,
-    showUsername: dto.showUsername || true,
-    isVisibleToOthers: dto.isVisibleToOthers || true,
+    showUsername: dto.showUsername == null ? true : dto.showUsername,
+    isVisibleToOthers: dto.isVisibleToOthers == null ? true : dto.isVisibleToOthers,
     dateOfBirth: dto.dateOfBirth ? getUTCDate(dto.dateOfBirth) : null,
   });
 

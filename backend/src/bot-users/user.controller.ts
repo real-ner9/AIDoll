@@ -26,10 +26,6 @@ export class UserController {
       const user = await this.userService.getUserFromCacheOrDB(id);
       await this.userService.setLastLoginTimestamp(id);
 
-      if (!user.isVisibleToOthers) {
-        await this.userService.setProfileVisible(user.userId, true);
-      }
-
       return user || {};
       // return {};
     } catch (error) {
