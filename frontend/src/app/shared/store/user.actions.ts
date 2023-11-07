@@ -1,5 +1,7 @@
 import { createAction, props } from '@ngrx/store';
 import { ComplaintType } from '../models/complaint';
+import { User } from '../models/user';
+import { Settings } from '../models/settings';
 
 export const blockUser = createAction(
   '[User] Block User',
@@ -43,5 +45,26 @@ export const removeMatchSuccess = createAction(
 
 export const removeMatchFailure = createAction(
   '[User] Remove Match Failure',
+  props<{ error: any }>()
+);
+
+export const setUserInfo = createAction(
+  '[User] Set User Info',
+  props<{user: User}>(),
+)
+
+// Actions for updating user settings
+export const updateUserSettings = createAction(
+  '[User] Update User Settings',
+  props<{ settings: Settings }>()
+);
+
+export const updateUserSettingsSuccess = createAction(
+  '[User] Update User Settings Success',
+  props<{ user: User }>()
+);
+
+export const updateUserSettingsFailure = createAction(
+  '[User] Update User Settings Failure',
   props<{ error: any }>()
 );

@@ -1,0 +1,22 @@
+@import "../../../styles/palete";
+
+form {
+  padding: 24px;
+}
+
+.form-field {
+  width: 100%;
+}
+
+.button-primary {
+  width: 221px;
+  @include primary-button();
+  position: fixed;
+  bottom: 77px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.description {
+  padding-top: 24px;
+}

@@ -427,17 +427,17 @@ export class ChatActionsService {
   ): Promise<any> {
     const user = await this.userService.getUserFromCacheOrDB(userId);
 
-    let browsingProfilesButton: any = Markup.button.webApp(
+    const browsingProfilesButton: any = Markup.button.webApp(
       '📄 Смотреть анкеты',
       `${process.env.WEB_APP_URL}`,
     );
 
-    if (!user || !user?.name) {
-      browsingProfilesButton = Markup.button.callback(
-        '📄 Смотреть анкеты',
-        'edit_profile',
-      );
-    }
+    // if (!user || !user?.name) {
+    //   browsingProfilesButton = Markup.button.callback(
+    //     '📄 Смотреть анкеты',
+    //     'edit_profile',
+    //   );
+    // }
 
     const buttons = [
       [
@@ -448,7 +448,7 @@ export class ChatActionsService {
       ],
       // [Markup.button.callback('📄 Смотреть анкеты', 'browsing_profiles')],
       [browsingProfilesButton],
-      [Markup.button.callback('✏️ Редактировать анкету', 'edit_profile')],
+      // [Markup.button.callback('✏️ Редактировать анкету', 'edit_profile')],
     ];
 
     // if (hideNotificationButton) {

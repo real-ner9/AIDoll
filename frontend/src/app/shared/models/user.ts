@@ -11,6 +11,10 @@ export interface User {
   isBlocage?: boolean;
   enableNotificatage?: boolean;
   lastMessageTimestage?: number;
+  /**
+   * @deprecated
+   * новое поле dateOfBirth
+   */
   age?: number;
   description?: string;
   photoUrl?: string;
@@ -22,4 +26,5 @@ export interface User {
   online?: boolean;
   blockedUntil?: Date | string;
   blockReason?: ComplaintType;
+  dateOfBirth?: Date | string;
 }

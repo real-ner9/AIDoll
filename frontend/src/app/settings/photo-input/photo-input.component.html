@@ -1,0 +1,43 @@
+  <section class="edit-photo-section">
+    <div *ngFor="let url of imageUrls; let i = index">
+      <div class="photo-container downloaded">
+        <img [src]="url | photoUrl" alt="Uploaded Image">
+        <div class="spinner" *ngIf="loading">
+          <mat-spinner></mat-spinner>
+        </div>
+        <div class="controls" *ngIf="!loading">
+          <div class="remove" (click)="confirmRemoval(i)">
+            <app-icon icon="trash"></app-icon>
+          </div>
+          <div class="change">
+            <input
+              type="file"
+              (change)="onFilesSelected($event, i)"
+              #fileInput
+              style="display: none;"
+              accept="image/*"
+            >
+            <app-icon icon="arrow-reload" (click)="confirmChange(fileInput)"></app-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngFor="let i of [].constructor(maxPhotos - imageUrls.length)">
+      <div class="photo-container add">
+        <input
+          type="file"
+          (change)="onFilesSelected($event)"
+          #fileInput
+          style="display: none;"
+          accept="image/*"
+        >
+        <div class="custom-photo-input" (click)="openFileInput(fileInput)">
+          <app-icon *ngIf="!loading" icon="plus-attachment"></app-icon>
+          <div class="spinner" *ngIf="loading">
+            <mat-spinner></mat-spinner>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>

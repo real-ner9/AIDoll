@@ -14,6 +14,8 @@ import { UserBlock } from './schemas/user-block.entity';
 import { ComplaintType, UserComplaint } from './schemas/user.complaint.entity';
 import { FileStoreService } from '../file-store/file-store.service';
 import { InvitationLink } from './schemas/invitation-link.entity';
+import { Settings } from './types/settings';
+import { AttachmentStatus } from '../file-store/types/attachment-status';
 
 export type UserFlag = 'all' | 'activeRoom' | 'currentPartner';
 
@@ -24,7 +26,7 @@ export class UserService {
   showedFeedParams = [
     'user.id',
     'user.currentPartner',
-    'user.age',
+    'user.dateOfBirth',
     'user.online',
     'user.name',
     'user.role',
@@ -895,6 +897,8 @@ export class UserService {
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
       .andWhere('user.isVisibleToOthers = true')
+      .andWhere('user.name IS NOT NULL')
+      .andWhere('user.description IS NOT NULL')
       .andWhere('dislike.id IS NULL')
       .andWhere('likeIncoming.id IS NOT NULL')
       .andWhere('likeOutgoing.id IS NOT NULL')
@@ -958,6 +962,8 @@ export class UserService {
       )
       .where('chatRequest.receiver_id = :userId', { userId })
       .andWhere('user.blockReason IS NULL')
+      .andWhere('user.name IS NOT NULL')
+      .andWhere('user.description IS NOT NULL')
       .andWhere('blocksByMe.id IS NULL')
       .andWhere('blockedByOthers.id IS NULL')
       .orderBy('chatRequest.requestedAt', 'DESC');
@@ -1014,6 +1020,8 @@ export class UserService {
       .where('(user.userId != :userId)')
       .andWhere('(user.isBlocked = false)')
       .andWhere('(user.isVisibleToOthers = true)')
+      .andWhere('user.name IS NOT NULL')
+      .andWhere('user.description IS NOT NULL')
       .andWhere('(dislike.id IS NULL)')
       .andWhere('(like.id IS NULL)')
       .andWhere('user.blockReason IS NULL')
@@ -1075,6 +1083,8 @@ export class UserService {
       )
       .where('user.userId != :userId')
       .andWhere('user.isBlocked = false')
+      .andWhere('user.name IS NOT NULL')
+      .andWhere('user.description IS NOT NULL')
       .andWhere('user.blockReason IS NULL')
       .andWhere('user.isVisibleToOthers = true')
       .andWhere('blocksByMe.id IS NULL')
@@ -1432,5 +1442,40 @@ export class UserService {
     });
 
     return count;
+  }
+
+  // Метод для обновления данных пользователя
+  async updateUser(
+    userId: string | number,
+    settings: Partial<Settings>,
+  ): Promise<User> {
+    userId = `${userId}`;
+    const existingUser = await this.getUserFromCacheOrDB(userId);
+    if (existingUser.photoUrl && existingUser.photoUrl !== settings.photoUrl) {
+      await this.fileStoreService.deleteFromS3(existingUser.photoUrl);
+    }
+    await this.userRepository.update({ userId: userId }, settings);
+    const newUser = await this.userRepository.findOne({ where: { userId } });
+
+    if (newUser.photoUrl) {
+      await this.fileStoreService.updateFileStatus(
+        newUser.photoUrl,
+        AttachmentStatus.PUBLISHED,
+      );
+    }
+
+    this.updateCache(newUser);
+    return newUser;
+  }
+
+  // Метод для создания нового пользователя
+  async createUser(
+    settings: Partial<Settings | { userId: string; username?: string }>,
+  ): Promise<User> {
+    // Предполагаем, что User это класс, который используется как тип для создания нового пользователя
+    const newUser = this.userRepository.create(settings);
+    await this.userRepository.save(newUser);
+    this.updateCache(newUser);
+    return newUser;
   }
 }

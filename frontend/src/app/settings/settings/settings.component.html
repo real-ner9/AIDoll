@@ -1,1 +1,41 @@
-<p>settings works!</p>
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="form">
+  <mat-form-field appearance="outline" class="form-field">
+      <mat-label>Имя (псевдоним)</mat-label>
+      <input matInput formControlName="name" [maxlength]="40">
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="form-field" (click)="picker.open()">
+    <mat-label>Дата рождения</mat-label>
+    <input matInput
+           [matDatepicker]="picker"
+           formControlName="dateOfBirth"
+           [matDatepickerFilter]="dateFilter"
+           readonly
+           (focus)="picker.open()">
+    <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+    <mat-datepicker #picker startView="multi-year" [startAt]="startedAt"></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="form-field">
+    <mat-label>Роль</mat-label>
+    <mat-select formControlName="role">
+        <mat-option *ngFor="let role of roles" [value]="role.key">{{ role.value }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <section class="photos">
+    <mat-label>Фото</mat-label>
+    <app-photo-input [initialPhotoUrl]="(facade.user$ | async)?.photoUrl" formControlName="photoUrls" [maxPhotos]="1"></app-photo-input>
+  </section>
+
+  <mat-form-field appearance="outline" class="form-field description">
+      <mat-label>Описание</mat-label>
+      <textarea matInput formControlName="description" rows="10" [maxLength]="600"></textarea>
+  </mat-form-field>
+
+  <mat-checkbox formControlName="isVisibleToOthers">Показывать анкету в ленте</mat-checkbox>
+  <mat-checkbox formControlName="showUsername">Показывать ссылку на профиль</mat-checkbox>
+
+  <button class="button-primary" mat-raised-button type="submit" [disabled]="form.pristine">Сохранить</button>
+</form>
+<app-background-for-switcher></app-background-for-switcher>

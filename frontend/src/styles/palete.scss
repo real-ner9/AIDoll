@@ -1,5 +1,7 @@
 $font-family: "Golos UI", sans-serif;
 $accent-blue: #007AFF;
+$primary-color: #642EFF;
+$neutrals-color: #E2E2E9;
 
 @mixin text-base($text-color: white) {
   font-family: $font-family;
@@ -45,4 +47,25 @@ $accent-blue: #007AFF;
   @include link-styled-font ($color-normal, $color-hover, $color-active, $color-visited);
 
   text-decoration: none;
+}
+
+@mixin button() {
+  --mdc-protected-button-label-text-color: #E2E2E9 !important;
+  --mdc-typography-button-font-family: "Golos UI", sans-serif;
+  --mdc-typography-button-font-size: 14px;
+  --mdc-protected-button-container-shape: 51px;
+  padding: 13px 12px !important;
+  height: 46px !important;
+}
+
+@mixin primary-button() {
+  @include button();
+
+  --mdc-protected-button-container-color: #642EFF !important;
+}
+
+@mixin error-button() {
+  @include button();
+
+  --mdc-protected-button-container-color: #FF542E !important;
 }

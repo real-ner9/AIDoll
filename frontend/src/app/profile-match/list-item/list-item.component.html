@@ -27,8 +27,8 @@
     <span class="hint" *ngIf="page === 'requests'">{{ value.online ? ' • м' : 'М' }}ожно принять приглашение в чат</span>
   </div>
   <mat-chip-listbox class="chips">
-    <mat-chip *ngIf="value.age">
-      {{ value.age }}
+    <mat-chip *ngIf="value.dateOfBirth">
+      {{ value.dateOfBirth | age }}
     </mat-chip>
     <mat-chip color="primary" *ngIf="value.role">
       {{ UserRoleMap[value.role] || value.role }}

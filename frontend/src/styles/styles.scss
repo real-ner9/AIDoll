@@ -39,3 +39,41 @@ button[disabled] {
 .mat-mdc-menu-content .mat-mdc-menu-item .mat-mdc-menu-item-text.mat-mdc-menu-item-text {
   @include text-base();
 }
+
+.mat-mdc-checkbox-ripple,
+.mat-mdc-checkbox-touch-target,
+.mdc-checkbox__ripple {
+  display: none !important;
+}
+.mdc-checkbox.mdc-checkbox .mdc-checkbox__native-control:focus:checked~.mdc-checkbox__ripple.mdc-checkbox__ripple,
+.mdc-checkbox:active.mdc-checkbox:active .mdc-checkbox__native-control:checked~.mdc-checkbox__ripple.mdc-checkbox__ripple {
+ background-color: #642EFF;
+}
+.mdc-checkbox__background.mdc-checkbox__background {
+  background-color: transparent !important;
+  border-color: #2D2D39 !important;
+}
+.mdc-checkbox .mdc-checkbox__native-control:enabled~.mdc-checkbox__background .mdc-checkbox__checkmark {
+  color: #642EFF !important;
+}
+
+:root {
+  --mdc-outlined-text-field-focus-outline-color: #642EFF;
+  --mdc-outlined-text-field-focus-label-text-color: #642EFF;
+  --mat-select-focused-arrow-color: #642EFF;
+  --mdc-outlined-text-field-caret-color: #642EFF;
+  --mat-datepicker-toggle-active-state-icon-color: #642EFF;
+  --mdc-outlined-text-field-error-hover-outline-color: #FF542E;
+  --mat-option-selected-state-label-text-color: #FFFFFF;
+  --mat-form-field-container-text-font: "Golos UI", sans-serif;
+  --mat-option-label-text-font: "Golos UI", sans-serif;
+  --mat-form-field-container-text-size: 14px;
+  --mat-option-label-text-size: 14px;
+  --mdc-outlined-text-field-label-text-size: 14px;
+  --mat-select-trigger-text-size: 14px;
+}
+
+
+.mat-primary .mat-pseudo-checkbox-checked.mat-pseudo-checkbox-minimal::after, .mat-primary .mat-pseudo-checkbox-indeterminate.mat-pseudo-checkbox-minimal::after {
+  color: #FFFFFF;
+}

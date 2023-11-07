@@ -32,96 +32,96 @@ export class UserActionsService {
   init(bot: Telegraf) {
     this.bot = bot;
 
-    this.bot
-      .action('edit_profile', async (ctx) =>
-        safeExecute(this.onEditProfile.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_profile error: ', err, ctx);
-      });
-
-    this.bot
-      .action('without_photo', async (ctx) =>
-        safeExecute(this.withoutPhoto.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_profile error: ', err, ctx);
-      });
-
-    this.bot
-      .action(/set_role\?role=([^&]+)(?:&from=([^&]+))?/, async (ctx) =>
-        safeExecute(this.onSetRole.bind(this), ctx, {
-          role: ctx.match[1],
-          from: ctx.match[2],
-        }),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_profile error: ', err, ctx);
-      });
-
-    this.bot
-      .action('edit_age', async (ctx) =>
-        safeExecute(this.onEditAge.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_age error: ', err, ctx);
-      });
-
-    this.bot
-      .action('edit_name', async (ctx) =>
-        safeExecute(this.onEditName.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_name error: ', err, ctx);
-      });
-
-    this.bot
-      .action('edit_role', async (ctx) =>
-        safeExecute(this.feelRole.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_role error: ', err, ctx);
-      });
-
-    this.bot
-      .action('edit_description', async (ctx) =>
-        safeExecute(this.onEditDescription.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_description error: ', err, ctx);
-      });
-
-    this.bot
-      .action('edit_photo', async (ctx) =>
-        safeExecute(this.onEditPhoto.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError('edit_photo error: ', err, ctx);
-      });
-
-    this.bot
-      .action('toggle_profile_visible', async (ctx) =>
-        safeExecute(this.onToggleProfileVisible.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError(
-          'toggle_profile_visible error: ',
-          err,
-          ctx,
-        );
-      });
-
-    this.bot
-      .action('toggle_username_visible', async (ctx) =>
-        safeExecute(this.onToggleUserNameVisible.bind(this), ctx),
-      )
-      .catch(async (err, ctx) => {
-        await this.handleBotEventError(
-          'toggle_username_visible error: ',
-          err,
-          ctx,
-        );
-      });
+    // this.bot
+    //   .action('edit_profile', async (ctx) =>
+    //     safeExecute(this.onEditProfile.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_profile error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('without_photo', async (ctx) =>
+    //     safeExecute(this.withoutPhoto.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_profile error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action(/set_role\?role=([^&]+)(?:&from=([^&]+))?/, async (ctx) =>
+    //     safeExecute(this.onSetRole.bind(this), ctx, {
+    //       role: ctx.match[1],
+    //       from: ctx.match[2],
+    //     }),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_profile error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('edit_age', async (ctx) =>
+    //     safeExecute(this.onEditAge.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_age error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('edit_name', async (ctx) =>
+    //     safeExecute(this.onEditName.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_name error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('edit_role', async (ctx) =>
+    //     safeExecute(this.feelRole.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_role error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('edit_description', async (ctx) =>
+    //     safeExecute(this.onEditDescription.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_description error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('edit_photo', async (ctx) =>
+    //     safeExecute(this.onEditPhoto.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError('edit_photo error: ', err, ctx);
+    //   });
+    //
+    // this.bot
+    //   .action('toggle_profile_visible', async (ctx) =>
+    //     safeExecute(this.onToggleProfileVisible.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError(
+    //       'toggle_profile_visible error: ',
+    //       err,
+    //       ctx,
+    //     );
+    //   });
+    //
+    // this.bot
+    //   .action('toggle_username_visible', async (ctx) =>
+    //     safeExecute(this.onToggleUserNameVisible.bind(this), ctx),
+    //   )
+    //   .catch(async (err, ctx) => {
+    //     await this.handleBotEventError(
+    //       'toggle_username_visible error: ',
+    //       err,
+    //       ctx,
+    //     );
+    //   });
   }
 
   async handleBotEventError(event: string, err: any, ctx) {
@@ -496,7 +496,7 @@ export class UserActionsService {
           await this.fileStoreService.deleteFromS3(user.photoUrl);
           await this.userService.setPhoto(userId, null);
         }
-        const s3Url = await this.fileStoreService.uploadToS3(buffer);
+        const s3Url = await this.fileStoreService.uploadToS3(buffer, userId);
         await this.userService.setPhoto(userId, s3Url);
 
         const isVisible = await this.userService.getProfileVisible(userId);

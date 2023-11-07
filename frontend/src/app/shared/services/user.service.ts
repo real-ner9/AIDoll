@@ -4,6 +4,7 @@ import { Page } from '../models/page';
 import { Match } from '../models/match';
 import { User } from '../models/user';
 import { ComplaintType } from '../models/complaint';
+import { Settings } from '../models/settings';
 
 @Injectable({
   providedIn: 'root',
@@ -80,6 +81,13 @@ export class UserService {
     return this.http.post<{ id: number }>(`${this.path}/removeMatch`, {
       removedUserId: removedUserId
     }, {
+      observe: 'body',
+      responseType: 'json',
+    });
+  }
+
+  updateSettings(settings: Settings) {
+    return this.http.patch<User>(`${this.path}/settings`, settings, {
       observe: 'body',
       responseType: 'json',
     });

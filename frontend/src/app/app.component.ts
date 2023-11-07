@@ -6,6 +6,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 import { ComplaintType, ComplaintTypeMap } from './shared/models/complaint';
+import { Store } from '@ngrx/store';
+import { setUserInfo } from './shared/store/user.actions';
 
 @Component({
   selector: 'app-root',
@@ -27,6 +29,7 @@ export class AppComponent implements OnDestroy {
     private _snackBar: MatSnackBar,
     private readonly router: Router,
     private readonly cookieService: CookieService,
+    private readonly store: Store,
   ) {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const initDataString = params.get('tgWebAppData');
@@ -44,7 +47,26 @@ export class AppComponent implements OnDestroy {
       .subscribe(
       response => {
         if (response.blockReason) {
-          this.error = `Вы не можете пользоваться приложением по причине: ${ComplaintTypeMap?.[response.blockReason] || ComplaintTypeMap[ComplaintType.OFFENSIVE_BEHAVIOR]}`
+          this.error = `Вы не можете пользоваться приложением по причине: ${ComplaintTypeMap?.[response.blockReason] || ComplaintTypeMap[ComplaintType.OFFENSIVE_BEHAVIOR]}`;
+          return;
+        }
+
+        this.store.dispatch(setUserInfo({ user: response }));
+
+        if (!response.description || !response.name || !response.role || !response.dateOfBirth) {
+          this.router.navigate(['/settings']);
+
+          const snackbarRef = this._snackBar.open(
+            'Заполни недостающие поля своей анкеты','ок',
+            { duration: AppComponent.SNACKBAR_DURATION }
+          );
+
+          snackbarRef
+            .onAction()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+              snackbarRef.dismiss();
+            });
         }
       },
       error => {

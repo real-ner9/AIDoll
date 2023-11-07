@@ -8,6 +8,11 @@ import { BackgroundForSwitcherComponent } from './components/background-for-swit
 import { PhotoUrlPipe } from './pipes/photo-url.pipe';
 import { EffectsModule } from '@ngrx/effects';
 import { UserEffects } from './store/user.effects';
+import { StoreModule } from '@ngrx/store';
+import { userReducer } from './store/user.reducer';
+import { ButtonComponent } from './components/button/button.component';
+import { MatButtonModule } from '@angular/material/button';
+import { AgePipe } from './pipes/age.pipe';
 
 @NgModule({
   declarations: [
@@ -15,12 +20,15 @@ import { UserEffects } from './store/user.effects';
     IconComponent,
     BackgroundForSwitcherComponent,
     PhotoUrlPipe,
+    ButtonComponent,
+    AgePipe,
   ],
   exports: [
     MainTabSwitcherComponent,
     BackgroundForSwitcherComponent,
     IconComponent,
-    PhotoUrlPipe
+    PhotoUrlPipe,
+    AgePipe,
   ],
   imports: [
     MatTabsModule,
@@ -28,7 +36,9 @@ import { UserEffects } from './store/user.effects';
     CommonModule,
     RouterLink,
     RouterLinkActive,
+    StoreModule.forFeature('user', userReducer),
     EffectsModule.forFeature([UserEffects]),
+    MatButtonModule,
   ]
 })
 export class SharedModule { }

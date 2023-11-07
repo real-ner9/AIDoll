@@ -14,6 +14,8 @@ import { EffectsModule } from '@ngrx/effects';
 import { IntersectionObserverModule } from '@ng-web-apis/intersection-observer';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import {CookieService} from 'ngx-cookie-service';
+import { MatNativeDateModule, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 
 declare global {
   interface Window {
@@ -50,6 +52,8 @@ declare global {
       }
     ),
     MatSnackBarModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
   providers: [
     {
@@ -58,6 +62,7 @@ declare global {
       multi: true
     },
     CookieService,
+    { provide: MAT_DATE_LOCALE, useValue: 'ru-RU' }
   ],
   bootstrap: [AppComponent]
 })

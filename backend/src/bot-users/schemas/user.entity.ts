@@ -50,6 +50,10 @@ export class User {
   @Column({ type: 'text', default: UserState.QUICK_SEARCH })
   state: UserState;
 
+  /**
+   * @deprecated
+   * новое поле dateOfBirth
+   */
   @Column({ type: 'int', nullable: true })
   age: number;
 
@@ -123,6 +127,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   blockReason: ComplaintType;
 
+  @Column({ type: 'timestamp', nullable: true })
+  dateOfBirth: Date | null;
+
   constructor(userId: string) {
     this.userId = userId;
     this.isBlocked = false;
@@ -147,5 +154,6 @@ export class User {
     this.lastLoginTimestamp = 0;
     this.blockedUntil = null;
     this.blockReason = null;
+    this.dateOfBirth = null;
   }
 }

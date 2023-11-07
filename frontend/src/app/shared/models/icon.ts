@@ -10,4 +10,7 @@ export type Icon = 'settings'
   | 'like'
   | 'dislike'
   | 'points'
+  | 'plus-attachment'
+  | 'trash'
+  | 'arrow-reload'
   | null

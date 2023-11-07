@@ -28,7 +28,6 @@ export class MainTabSwitcherComponent {
         label: 'Профиль',
         labelKey: 'settings',
         link: '/settings',
-        disabled: true,
         index: 1,
         icon: 'settings',
       },

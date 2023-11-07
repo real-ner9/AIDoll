@@ -4,6 +4,7 @@ import {
   Get,
   HttpException,
   HttpStatus,
+  Patch,
   Post,
   Query,
   Req,
@@ -11,6 +12,8 @@ import {
 import { UserService } from './user.service';
 import { TgUser } from './types/tg-user';
 import { ComplaintType } from './schemas/user.complaint.entity';
+import { Settings } from './types/settings';
+import { UserRole } from './types/user-role';
 
 @Controller('user')
 export class UserController {
@@ -27,7 +30,8 @@ export class UserController {
         await this.userService.setProfileVisible(user.userId, true);
       }
 
-      return user;
+      return user || {};
+      // return {};
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -129,6 +133,73 @@ export class UserController {
       return await this.userService.removeMatch(id, removedUserId);
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  @Patch('settings')
+  async updateSettings(@Req() req: Request, @Body() settings: Settings) {
+    try {
+      const authString = req.headers['authorization'];
+      const user = this.getUser(authString);
+
+      // Валидация полей settings
+      this.validateSettings(settings);
+
+      const existingUser = await this.userService.getUserFromCacheOrDB(user.id);
+      if (existingUser) {
+        return await this.userService.updateUser(user.id, settings);
+      } else {
+        // Поля, которые не могут быть пустыми, должны быть предварительно проверены в методе validateSettings
+        return await this.userService.createUser({
+          userId: `${user.id}`,
+          username: user.username ? `${user.username}` : null,
+          ...settings,
+        });
+      }
+    } catch (error) {
+      throw new HttpException(
+        error.message,
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  private validateSettings(settings: Settings): void {
+    const { name, description, dateOfBirth, role } = settings;
+
+    if (name !== undefined && !name.trim() && name.trim().length >= 30) {
+      throw new HttpException(
+        'Имя не может быть пустым',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      description !== undefined &&
+      !description.trim() &&
+      description.trim().length >= 600
+    ) {
+      throw new HttpException(
+        'Описание не может быть пустым',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      dateOfBirth !== undefined &&
+      new Date(dateOfBirth).toString() === 'Invalid Date'
+    ) {
+      throw new HttpException(
+        'Некорректная дата рождения',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (role !== undefined && !Object.values(UserRole).includes(role)) {
+      throw new HttpException(
+        'Некорректная роль пользователя',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 
