@@ -10,26 +10,26 @@ import { CookieService } from 'ngx-cookie-service';
   providedIn: 'root'
 })
 export class SocketService {
-  private socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-  private path = 'user'
+  private socket: Socket<DefaultEventsMap, DefaultEventsMap> | undefined;
+  private path = 'user';
 
   constructor(
     private readonly cookieService: CookieService,
-  ) {
-    const authData = this.cookieService.get('authData');
+  ) {}
 
+  init(authData: string) {
     this.socket = io(`${environment.socketUrl}/${this.path}`, { query: { authData }});
   }
 
   public onEvent(event: string): Observable<any> {
     return new Observable<Event>(observer => {
-      this.socket.on(event, () => observer.next());
+      this.socket?.on(event, () => observer.next());
     });
   }
 
   sendRequestMatch(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('requestMatch', { id }, (response: any) => {
+      this.socket?.emit('requestMatch', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -42,7 +42,7 @@ export class SocketService {
 
   sendCancelRequestMatch(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('cancelRequestMatch', { id }, (response: any) => {
+      this.socket?.emit('cancelRequestMatch', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -55,7 +55,7 @@ export class SocketService {
 
   sendApproveRequest(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('approveRequest', { id }, (response: any) => {
+      this.socket?.emit('approveRequest', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -68,7 +68,7 @@ export class SocketService {
 
   sendCancelRequest(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('cancelRequest', { id }, (response: any) => {
+      this.socket?.emit('cancelRequest', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -81,31 +81,31 @@ export class SocketService {
 
   public onMatchRequest(): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.on('matchRequest', ({ user }: { user: User }) => observer.next(user));
+      this.socket?.on('matchRequest', ({ user }: { user: User }) => observer.next(user));
     });
   }
 
   public onMatchRequestCanceled(): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.on('matchRequestCanceled', ({ user }: { user: User }) => observer.next(user));
+      this.socket?.on('matchRequestCanceled', ({ user }: { user: User }) => observer.next(user));
     });
   }
 
   public onRequestApproved(): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.on('requestApproved', ({ user }: { user: User }) => observer.next(user));
+      this.socket?.on('requestApproved', ({ user }: { user: User }) => observer.next(user));
     });
   }
 
   public onRequestCanceled(): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.on('requestCanceled', ({ user }: { user: User }) => observer.next(user));
+      this.socket?.on('requestCanceled', ({ user }: { user: User }) => observer.next(user));
     });
   }
 
   sendLike(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('sendLike', { id }, (response: any) => {
+      this.socket?.emit('sendLike', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -118,7 +118,7 @@ export class SocketService {
 
   sendDislike(id: number): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.emit('sendDislike', { id }, (response: any) => {
+      this.socket?.emit('sendDislike', { id }, (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {
@@ -131,21 +131,21 @@ export class SocketService {
 
   liked() {
     return new Observable<{ user: User; hasPartnerLikedUser: boolean }>(observer => {
-      this.socket.on('liked', ({ user, hasPartnerLikedUser }: { user: User; hasPartnerLikedUser: boolean }) =>
+      this.socket?.on('liked', ({ user, hasPartnerLikedUser }: { user: User; hasPartnerLikedUser: boolean }) =>
         observer.next({user, hasPartnerLikedUser}));
     });
   }
 
   disliked() {
     return new Observable<{ user: User }>(observer => {
-      this.socket.on('disliked', ({ user }: { user: User }) =>
+      this.socket?.on('disliked', ({ user }: { user: User }) =>
         observer.next({ user }));
     });
   }
 
   public onApproveRequestResponse(): Observable<any> {
     return new Observable<any>(observer => {
-      this.socket.on('approveRequestResponse', (response: any) => {
+      this.socket?.on('approveRequestResponse', (response: any) => {
         if (response.error) {
           observer.error(response.error);
         } else {

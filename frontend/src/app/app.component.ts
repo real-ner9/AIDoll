@@ -40,7 +40,7 @@ export class AppComponent implements OnDestroy {
       this.user = JSON.parse(user);
     }
 
-    this.updateTelegramData();
+    this.updateTelegramDataAndInitUserSocketService();
 
     this.userService.authorize()
       .pipe(take(1))
@@ -112,7 +112,7 @@ export class AppComponent implements OnDestroy {
     this.snackbarsInit();
   }
 
-  updateTelegramData() {
+  updateTelegramDataAndInitUserSocketService() {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const initDataString = params.get('tgWebAppData');
 
@@ -121,11 +121,16 @@ export class AppComponent implements OnDestroy {
       const hash = initData.get('hash');
       if (hash) {
         this.cookieService.set('authData', initDataString);
+        this.socketUserService.init(initDataString);
         const userData = initData.get('user');
         if (userData) {
           this.cookieService.set('user', userData)
         }
+      } else {
+        this.socketUserService.init(this.cookieService.get('authData'));
       }
+    } else {
+      this.socketUserService.init(this.cookieService.get('authData'));
     }
   }
 

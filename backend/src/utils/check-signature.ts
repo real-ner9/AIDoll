@@ -2,7 +2,14 @@ import { createHmac } from 'crypto';
 
 // https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 export function checkSignature(data: string, botToken: string): boolean {
-  data = data.replace('twa-init-data ', '');
+  if (!data) {
+    return false;
+  }
+  data = data?.replace('twa-init-data ', '');
+
+  if (!data) {
+    return false;
+  }
   // The data is a query string, which is composed of a series of field-value pairs.
   const encoded = decodeURIComponent(data);
 
