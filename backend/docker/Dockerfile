@@ -4,6 +4,6 @@ WORKDIR /app
 COPY .. /app
 
 RUN npm ci
-RUN npm run build
+RUN npm run build --prod
 
-CMD npm run start:prod
+CMD ["node", "./dist/main.js"]
