@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
-import * as S3 from 'aws-sdk/clients/s3';
+import { PutObjectCommandInput, S3 } from '@aws-sdk/client-s3';
 import * as process from 'process';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,11 +18,23 @@ export class FileStoreService {
     private readonly fileStoreRepository: Repository<FileStore>,
   ) {
     this.s3 = new S3({
-      accessKeyId: process.env.S3_ACCESSKEY_ID,
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      credentials: {
+        accessKeyId: process.env.S3_ACCESSKEY_ID,
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      },
+
+      // The transformation for endpoint is not implemented.
+      // Refer to UPGRADING.md on aws-sdk-js-v3 for changes needed.
+      // Please create/upvote feature request on aws-sdk-js-codemod for endpoint.
       endpoint: process.env.S3_ROOT_URL,
-      s3ForcePathStyle: true,
+
+      // The key s3ForcePathStyle is renamed to forcePathStyle.
+      forcePathStyle: true,
+
       region: 'ru-1',
+
+      // The key apiVersion is no longer supported in v3, and can be removed.
+      // @deprecated The client uses the "latest" apiVersion.
       apiVersion: 'latest',
     });
   }
@@ -46,14 +58,14 @@ export class FileStoreService {
         .jpeg({ quality: 80 }) // Выбираем формат JPEG и качество 80%
         .toBuffer();
 
-      const params = {
+      const params: PutObjectCommandInput = {
         Bucket: process.env.S3_BUCKET,
         Key: `${hashName}`,
         Body: compressedImageBuffer, // Используем сжатый буфер
         ContentType: 'image/jpeg',
         ACL: 'public-read',
       };
-      const res = await this.s3.putObject(params).promise();
+      const res = await this.s3.putObject(params);
       this.logger.log(`File uploaded successfully. ${res.ETag}`);
       const fileRecord = new FileStore(
         userId,
@@ -75,7 +87,7 @@ export class FileStoreService {
     };
 
     try {
-      await this.s3.deleteObject(params).promise();
+      await this.s3.deleteObject(params);
       await this.fileStoreRepository.delete({ fileHash: id });
       this.logger.log(`File deleted successfully.`);
     } catch (error) {
@@ -94,7 +106,7 @@ export class FileStoreService {
     };
 
     try {
-      const res = await this.s3.deleteObjects(params).promise();
+      const res = await this.s3.deleteObjects(params);
       this.logger.log(
         `Files deleted successfully. ${res.Deleted.length} items removed.`,
       );
@@ -158,7 +170,7 @@ export class FileStoreService {
             Quiet: false,
           },
         };
-        const res = await this.s3.deleteObjects(deleteParams).promise();
+        const res = await this.s3.deleteObjects(deleteParams);
         this.logger.log(
           `Files deleted successfully from S3. ${res.Deleted.length} items removed.`,
         );

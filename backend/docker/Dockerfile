@@ -8,4 +8,4 @@ COPY .. /app
 RUN npm ci
 RUN npm run build --prod
 
-CMD ["node", "--inspect=0.0.0.0:9229", "./dist/main.js"]
+CMD ["node", "--inspect", "./dist/main.js"]
