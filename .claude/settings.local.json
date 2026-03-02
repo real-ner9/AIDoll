@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -nP)",
+      "Bash(sort -t: -k2 -n -u)",
+      "Bash(docker run:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)"
     ]
   }
 }
