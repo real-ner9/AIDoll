@@ -39,6 +39,14 @@ export class FileStoreService {
     });
   }
 
+  async getFromS3(key: string): Promise<Buffer> {
+    const response = await this.s3.getObject({
+      Bucket: process.env.S3_BUCKET,
+      Key: key,
+    });
+    return Buffer.from(await response.Body.transformToByteArray());
+  }
+
   async uploadToS3(
     fileBuffer: Buffer,
     userId: string | number,

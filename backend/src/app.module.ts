@@ -31,7 +31,7 @@ import { FileStoreModule } from './file-store/file-store.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.HOST,
-      port: 5432,
+      port: parseInt(process.env.DB_PORT) || 5432,
       username: process.env.USERNAME,
       password: process.env.PASSWORD,
       database: process.env.DATABASE,
@@ -60,6 +60,9 @@ import { FileStoreModule } from './file-store/file-store.module';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).forRoutes('*');
+    consumer
+      .apply(AuthMiddleware)
+      .exclude('file-store/image/(.*)')
+      .forRoutes('*');
   }
 }

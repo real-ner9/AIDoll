@@ -1,4 +1,9 @@
-<div class="items">
+<div class="loader" *ngIf="loading$ | async">
+  <div class="loader__spinner">
+    <div class="loader__ring"></div>
+  </div>
+</div>
+<div class="items" *ngIf="(requests$ | async)?.length">
   <app-match-list-item
     page="requests"
     *ngFor="let item of (requests$ | async)"
@@ -6,5 +11,14 @@
     (approve)="onApprove($event)"
     (cancel)="onCancel($event)">
   </app-match-list-item>
+</div>
+<div class="empty-state" *ngIf="!(loading$ | async) && (requests$ | async)?.length === 0">
+  <div class="empty-state__icon">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z" fill="#642EFF"/>
+    </svg>
+  </div>
+  <span class="empty-state__title">Нет приглашений</span>
+  <span class="empty-state__text">Когда кто-то пригласит тебя в чат, ты увидишь это здесь</span>
 </div>
 <app-background-for-switcher></app-background-for-switcher>

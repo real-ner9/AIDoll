@@ -1,6 +1,70 @@
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 200px);
+
+  &__spinner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+  }
+
+  &__ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid rgba(100, 46, 255, 0.15);
+    border-top-color: #642EFF;
+    animation: spin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .items {
   padding: 16px 16px 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  text-align: center;
+  height: calc(100vh - 200px);
+
+  &__icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(100, 46, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  &__title {
+    font-family: "Golos UI", sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #E2E2E9;
+    margin-bottom: 8px;
+  }
+
+  &__text {
+    font-family: "Golos UI", sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(226, 226, 233, 0.5);
+    line-height: 20px;
+    max-width: 240px;
+  }
 }

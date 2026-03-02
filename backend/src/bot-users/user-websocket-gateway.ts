@@ -15,7 +15,7 @@ import * as process from 'process';
 
 @WebSocketGateway({
   namespace: '/user',
-
+  path: '/api/socket.io',
   cors: { origin: '*', credentials: true },
 })
 export class UsersWebSocketGateway

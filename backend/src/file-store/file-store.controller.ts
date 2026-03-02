@@ -1,14 +1,20 @@
 import {
   Controller,
   Post,
+  Get,
   UseInterceptors,
   UploadedFile,
   Param,
   Delete,
   HttpStatus,
   HttpException,
-  Req, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator,
+  Req,
+  Res,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileStoreService } from './file-store.service';
 import { TgUser } from '../bot-users/types/tg-user';
@@ -16,6 +22,17 @@ import { TgUser } from '../bot-users/types/tg-user';
 @Controller('file-store')
 export class FileStoreController {
   constructor(private readonly fileStoreService: FileStoreService) {}
+
+  @Get('image/:hash')
+  async getImage(@Param('hash') hash: string, @Res() res: Response) {
+    try {
+      const data = await this.fileStoreService.getFromS3(hash);
+      res.set({ 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000' });
+      res.send(data);
+    } catch (error) {
+      throw new HttpException('Image not found', HttpStatus.NOT_FOUND);
+    }
+  }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))

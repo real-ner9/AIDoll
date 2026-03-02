@@ -8,6 +8,7 @@ import { FeedFacade } from './store/feed.facade';
 })
 export class FeedListComponent implements OnInit, OnDestroy {
   feed$ = this.facade.feed$;
+  loading$ = this.facade.loading$;
 
   constructor(
     private facade: FeedFacade,

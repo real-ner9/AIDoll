@@ -7,6 +7,7 @@ import { combineLatest, filter, take } from 'rxjs';
 @Injectable({providedIn: 'root'})
 export class LikesFacade {
   likes$ = this.store.select(LikesSelectors.getLikesData);
+  loading$ = this.store.select(LikesSelectors.getLikedUsersLoading);
   totalElements$ = this.store.select(LikesSelectors.getLikesTotalElements);
   error$ = this.store.select(LikesSelectors.getLikesError);
   totalPages$ = this.store.select(LikesSelectors.getTotalPages);

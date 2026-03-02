@@ -8,6 +8,7 @@ import { LikesFacade } from './store/likes.facade';
 })
 export class LikeListComponent implements OnInit, OnDestroy {
   likes$ = this.facade.likes$;
+  loading$ = this.facade.loading$;
 
   constructor(private readonly facade: LikesFacade) {}
 

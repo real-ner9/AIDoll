@@ -18,7 +18,10 @@ export class SocketService {
   ) {}
 
   init(authData: string) {
-    this.socket = io(`${environment.socketUrl}/${this.path}`, { query: { authData }});
+    this.socket = io(`${environment.socketUrl}/${this.path}`, {
+      query: { authData },
+      path: '/api/socket.io',
+    });
   }
 
   public onEvent(event: string): Observable<any> {

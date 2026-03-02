@@ -1,3 +1,8 @@
+<div class="loader" *ngIf="loading$ | async">
+  <div class="loader__spinner">
+    <div class="loader__ring"></div>
+  </div>
+</div>
 <div class="items" *ngIf="(feed$ | async) as items" waIntersectionObserver>
   <app-feed-list-item
     page="feed"
@@ -7,5 +12,14 @@
     (dislike)="onDislike($event)"
     (waIntersectionObservee)="onIntersection($event, i, items.length)">
   </app-feed-list-item>
+</div>
+<div class="empty-state" *ngIf="!(loading$ | async) && (feed$ | async)?.length === 0">
+  <div class="empty-state__icon">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="#642EFF"/>
+    </svg>
+  </div>
+  <span class="empty-state__title">Лента пуста</span>
+  <span class="empty-state__text">Новые анкеты появятся совсем скоро</span>
 </div>
 <app-background-for-switcher></app-background-for-switcher>
