@@ -33,5 +33,19 @@ export function checkSignature(data: string, botToken: string): boolean {
 
   // if hash are equal the data may be used on your server.
   // Complex data types are represented as JSON-serialized objects.
-  return _hash === hash;
+  if (_hash !== hash) {
+    return false;
+  }
+
+  // Check auth_date is not older than 1 hour to prevent replay attacks
+  const authDateField = arr.find((str) => str.startsWith('auth_date='));
+  if (authDateField) {
+    const authDate = parseInt(authDateField.split('=')[1], 10);
+    const now = Math.floor(Date.now() / 1000);
+    if (now - authDate > 3600) {
+      return false;
+    }
+  }
+
+  return true;
 }

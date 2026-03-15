@@ -13,9 +13,15 @@ import { ProfileMatchModule } from './profile-match/profile-match.module';
 import * as process from 'process';
 import { AuthMiddleware } from './auth.middleware';
 import { FileStoreModule } from './file-store/file-store.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 60,
+    }]),
     ConfigModule.forRoot({
       envFilePath: ['.env.desk', '.env.local', '.env'],
       isGlobal: true,
@@ -56,7 +62,13 @@ import { FileStoreModule } from './file-store/file-store.module';
     FileStoreModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
