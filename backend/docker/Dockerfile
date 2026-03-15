@@ -7,9 +7,10 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 
 WORKDIR /app
-COPY .. /app
+COPY package.json package-lock.json ./
 
 RUN npm ci
+COPY . .
 RUN npm run build --prod
 
-CMD ["node", "--inspect", "./dist/main.js"]
+CMD ["node", "./dist/main.js"]

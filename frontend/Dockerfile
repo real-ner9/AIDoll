@@ -8,3 +8,4 @@ RUN npm run build --prod --output-path=./dist/frontend
 FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=angular_build /app/dist/frontend /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
